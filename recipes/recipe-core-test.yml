@@ -82,8 +82,9 @@ modules:
     fonts:
       nerd-fonts:
         - JetBrainsMono
-      google-fonts:
-        - Noto Color Emoji
+      url-fonts:
+        - name: NotoColorEmoji
+          url: https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf
 
   - type: default-flatpaks
     configurations:
