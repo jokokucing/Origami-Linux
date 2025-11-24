@@ -82,6 +82,8 @@ modules:
     fonts:
       nerd-fonts:
         - JetBrainsMono
+      google-fonts:
+        - Noto Color Emoji
 
   - type: default-flatpaks
     configurations:
