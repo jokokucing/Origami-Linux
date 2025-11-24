@@ -81,6 +81,14 @@ modules:
     fonts:
       nerd-fonts:
         - JetBrainsMono
+      url-fonts:
+        - name: NotoColorEmoji
+          url: https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf
+
+  - type: script
+    snippets:
+      - "chmod -R 644 /usr/share/fonts/url-fonts/"
+      - "find /usr/share/fonts/url-fonts/ -type d -exec chmod 755 {} +"
 
   - type: default-flatpaks
     configurations:
