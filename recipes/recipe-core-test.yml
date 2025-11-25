@@ -13,20 +13,6 @@ modules:
         - NetworkManager-wait-online.service
         - flatpak-add-fedora-repos.service
 
-  # 1. PRE-INSTALL: Mask Kernel Hooks
-  #    This allows us to install the kernel via DNF without crashing 'dracut' immediately.
-  #    We also mask 'loaderentry' to stop the harmless but noisy 'grub2-probe' errors you saw.
-  - type: script
-    snippets:
-      - "ln -sf /dev/null /usr/lib/kernel/install.d/50-dracut.install"
-      - "ln -sf /dev/null /usr/lib/kernel/install.d/51-dracut.install"
-      - "ln -sf /dev/null /usr/lib/kernel/install.d/05-rpmostree.install"
-      - "ln -sf /dev/null /usr/lib/kernel/install.d/90-loaderentry.install"
-
-  # 2. INSTALL: Kernel & Packages
-  #    We use DNF instead of rpm-ostree for reliability in the container.
-  #    Note: 'uksmd' is removed from here because it caused the build failure (missing in F43 repo).
-  #    We attempt to install it gracefully in step 4.
   - type: dnf
     repos:
       cleanup: true
@@ -39,23 +25,12 @@ modules:
         - sneexy/zen-browser
         - lilay/topgrade
         - varlad/zellij
-        # CachyOS Repos
-        - bieszczaders/kernel-cachyos
-        - bieszczaders/kernel-cachyos-addons
       files:
         - https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo
       keys:
         - https://pkg.cloudflareclient.com/pubkey.gpg
     install:
       packages:
-        # Official: CachyOS Kernel
-        - kernel-cachyos
-        - kernel-cachyos-devel-matched
-        # Official: Dependencies for Addons
-        - scx-scheds
-        - libcap-ng-devel
-        - procps-ng-devel
-        # Apps
         - tldr
         - neovim
         - python3-neovim
@@ -90,13 +65,6 @@ modules:
     remove:
       auto-remove: true
       packages:
-        # Official: Remove Stock Kernel
-        - kernel
-        - kernel-core
-        - kernel-modules
-        - kernel-modules-core
-        - kernel-modules-extra
-        # Remove Stock Apps
         - cosmic-player
         - firefox
         - firefox-langpacks
@@ -109,32 +77,6 @@ modules:
         - just
         - toolbox
         - google-noto-color-emoji-fonts
-
-  # 3. POST-INSTALL: Manual Kernel Setup
-  #    This fixes the "modules.dep is missing" error by generating it manually.
-  #    Using '&&' ensures variables persist between commands.
-  - type: script
-    snippets:
-      # Restore hooks
-      - "rm -f /usr/lib/kernel/install.d/50-dracut.install"
-      - "rm -f /usr/lib/kernel/install.d/51-dracut.install"
-      - "rm -f /usr/lib/kernel/install.d/05-rpmostree.install"
-      # Detect Version -> Depmod -> Initramfs
-      - "export KVER=$(ls /usr/lib/modules | grep cachyos | sort -V | tail -n1) && echo 'Found CachyOS Kernel: '$KVER && depmod -a $KVER && kernel-install add $KVER /usr/lib/modules/$KVER/vmlinuz"
-
-  # 4. OPTIONAL COMPONENTS (Graceful Install)
-  #    We try to install/enable UKSMD and SCX here. If they fail (because they are missing
-  #    in the F43 repo), we catch the error so your build still succeeds.
-  - type: script
-    snippets:
-      # Try to install uksmd (Fails gracefully if missing)
-      - "dnf install -y uksmd || echo 'WARNING: uksmd package not found for this version, skipping.'"
-      # Try to enable uksmd service (Fails gracefully if missing)
-      - "systemctl enable uksmd.service || echo 'WARNING: uksmd.service not found, skipping.'"
-      # Try to enable scx service (Fails gracefully if missing)
-      - "systemctl enable scx.service || echo 'WARNING: scx.service not found, skipping.'"
-      # Official: Enable SELinux Policy
-      - "setsebool -P domain_kernel_load_modules on || true"
 
   - type: fonts
     fonts:
