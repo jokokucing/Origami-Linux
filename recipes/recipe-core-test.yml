@@ -25,6 +25,7 @@ modules:
         - sneexy/zen-browser
         - lilay/topgrade
         - varlad/zellij
+        - bieszczaders/kernel-cachyos
       files:
         - https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo
       keys:
@@ -62,6 +63,7 @@ modules:
         - sudo-rs
         - uutils-coreutils
         - byobu
+        - kernel-cachyos
     remove:
       auto-remove: true
       packages:
@@ -77,6 +79,11 @@ modules:
         - just
         - toolbox
         - google-noto-color-emoji-fonts
+        - kernel
+        - kernel-core
+        - kernel-modules
+        - kernel-modules-core
+        - kernel-modules-extra
 
   - type: fonts
     fonts:
