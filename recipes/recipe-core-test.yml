@@ -25,6 +25,8 @@ modules:
         - sneexy/zen-browser
         - lilay/topgrade
         - varlad/zellij
+        - bieszczaders/kernel-cachyos
+        - bieszczaders/kernel-cachyos-addons
       files:
         - https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo
       keys:
@@ -62,9 +64,19 @@ modules:
         - sudo-rs
         - uutils-coreutils
         - byobu
+        - kernel-cachyos
+        - uksmd
+        - scx-scheds
+        - libcap-ng-devel
+        - procps-ng-devel
     remove:
       auto-remove: true
       packages:
+        - kernel
+        - kernel-core
+        - kernel-modules
+        - kernel-modules-core
+        - kernel-modules-extra
         - cosmic-player
         - firefox
         - firefox-langpacks
@@ -78,6 +90,12 @@ modules:
         - toolbox
         - google-noto-color-emoji-fonts
 
+  - type: systemd
+    system:
+      enabled:
+        - uksmd.service
+        - scx.service
+
   - type: fonts
     fonts:
       nerd-fonts:
@@ -88,6 +106,7 @@ modules:
 
   - type: script
     snippets:
+      - "setsebool -P domain_kernel_load_modules on || true"
       - "chmod -R 644 /usr/share/fonts/url-fonts/"
       - "find /usr/share/fonts/url-fonts/ -type d -exec chmod 755 {} +"
 
