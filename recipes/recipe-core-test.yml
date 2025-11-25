@@ -12,7 +12,6 @@ modules:
       masked:
         - NetworkManager-wait-online.service
         - flatpak-add-fedora-repos.service
-
   - type: dnf
     repos:
       cleanup: true
@@ -25,31 +24,11 @@ modules:
         - sneexy/zen-browser
         - lilay/topgrade
         - varlad/zellij
-        - bieszczaders/kernel-cachyos
       files:
         - https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo
       keys:
         - https://pkg.cloudflareclient.com/pubkey.gpg
-    remove:
-      auto-remove: true
-      packages:
-        - cosmic-player
-        - firefox
-        - firefox-langpacks
-        - gnome-disk-utility
-        - gnome-system-monitor
-        - ark
-        - htop
-        - vim
-        - nvtop
-        - just
-        - toolbox
-        - google-noto-color-emoji-fonts
-        - kernel
-        - kernel-core
-        - kernel-modules
-        - kernel-modules-core
-        - kernel-modules-extra
+
     install:
       packages:
         - tldr
@@ -83,7 +62,21 @@ modules:
         - sudo-rs
         - uutils-coreutils
         - byobu
-        - kernel-cachyos
+    remove:
+      auto-remove: true
+      packages:
+        - cosmic-player
+        - firefox
+        - firefox-langpacks
+        - gnome-disk-utility
+        - gnome-system-monitor
+        - ark
+        - htop
+        - vim
+        - nvtop
+        - just
+        - toolbox
+        - google-noto-color-emoji-fonts
 
   - type: fonts
     fonts:
@@ -114,5 +107,6 @@ modules:
 
   - type: script
     scripts:
+      - install-cachy.sh
       - install-theme.sh
       - cleanup.sh
