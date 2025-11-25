@@ -99,17 +99,24 @@ modules:
 
   - type: script
     snippets:
-      # Unmask the hooks so they work again
+      # Restore the hooks so kernel-install works
       - "rm -f /usr/lib/kernel/install.d/50-dracut.install"
       - "rm -f /usr/lib/kernel/install.d/51-dracut.install"
       - "rm -f /usr/lib/kernel/install.d/05-rpmostree.install"
-      # Identify the new kernel version
-      - "KVER=$(ls /lib/modules | grep cachyos | sort -V | tail -n1)"
-      - "echo 'Found CachyOS Kernel: '$KVER"
-      # Manually generate modules.dep (This fixes the error you saw!)
+
+      # DEBUG: List modules to see actual directory name in build log
+      - "ls -la /usr/lib/modules"
+
+      # Identify the new kernel version (Grab the latest directory that looks like a version)
+      # This avoids relying on 'grep cachyos' in case the directory naming is different
+      - "KVER=$(ls /usr/lib/modules | grep -E '^[0-9]' | sort -V | tail -n1)"
+      - "echo 'Found Kernel Version: '$KVER"
+
+      # Manually generate modules.dep for the detected kernel
       - "depmod -a $KVER"
-      # Now manually trigger the kernel installation scripts to build initramfs
-      - "kernel-install add $KVER /lib/modules/$KVER/vmlinuz"
+
+      # Manually trigger initramfs generation
+      - "kernel-install add $KVER /usr/lib/modules/$KVER/vmlinuz"
 
   - type: systemd
     system:
