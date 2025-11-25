@@ -99,24 +99,14 @@ modules:
 
   - type: script
     snippets:
-      # Restore the hooks so kernel-install works
+      # Restore hooks
       - "rm -f /usr/lib/kernel/install.d/50-dracut.install"
       - "rm -f /usr/lib/kernel/install.d/51-dracut.install"
       - "rm -f /usr/lib/kernel/install.d/05-rpmostree.install"
 
-      # DEBUG: List modules to see actual directory name in build log
-      - "ls -la /usr/lib/modules"
-
-      # Identify the new kernel version (Grab the latest directory that looks like a version)
-      # This avoids relying on 'grep cachyos' in case the directory naming is different
-      - "KVER=$(ls /usr/lib/modules | grep -E '^[0-9]' | sort -V | tail -n1)"
-      - "echo 'Found Kernel Version: '$KVER"
-
-      # Manually generate modules.dep for the detected kernel
-      - "depmod -a $KVER"
-
-      # Manually trigger initramfs generation
-      - "kernel-install add $KVER /usr/lib/modules/$KVER/vmlinuz"
+      # SINGLE CHAINED COMMAND: Detect Version -> Run depmod -> Run kernel-install
+      # This ensures variables persist across the steps.
+      - "export KVER=$(ls /usr/lib/modules | grep cachyos | sort -V | tail -n1) && echo 'Found CachyOS Kernel: '$KVER && depmod -a $KVER && kernel-install add $KVER /usr/lib/modules/$KVER/vmlinuz"
 
   - type: systemd
     system:
