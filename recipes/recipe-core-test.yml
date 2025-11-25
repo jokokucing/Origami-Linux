@@ -13,6 +13,18 @@ modules:
         - NetworkManager-wait-online.service
         - flatpak-add-fedora-repos.service
 
+  - type: rpm-ostree
+    repos:
+      - https://copr.fedorainfracloud.org/coprs/bieszczaders/kernel-cachyos/repo/fedora-%OS_VERSION%/bieszczaders-kernel-cachyos-fedora-%OS_VERSION%.repo
+    remove:
+      - kernel
+      - kernel-core
+      - kernel-modules
+      - kernel-modules-core
+      - kernel-modules-extra
+    install:
+      - kernel-cachyos
+
   - type: dnf
     repos:
       cleanup: true
@@ -63,7 +75,6 @@ modules:
         - sudo-rs
         - uutils-coreutils
         - byobu
-        - kernel-cachyos
     remove:
       auto-remove: true
       packages:
@@ -79,11 +90,6 @@ modules:
         - just
         - toolbox
         - google-noto-color-emoji-fonts
-        - kernel
-        - kernel-core
-        - kernel-modules
-        - kernel-modules-core
-        - kernel-modules-extra
 
   - type: fonts
     fonts:
