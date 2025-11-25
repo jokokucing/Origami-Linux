@@ -107,6 +107,5 @@ modules:
 
   - type: script
     scripts:
-      - install-cachy.sh
       - install-theme.sh
       - cleanup.sh
