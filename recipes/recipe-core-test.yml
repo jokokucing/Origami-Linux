@@ -25,10 +25,31 @@ modules:
         - sneexy/zen-browser
         - lilay/topgrade
         - varlad/zellij
+        - bieszczaders/kernel-cachyos
       files:
         - https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo
       keys:
         - https://pkg.cloudflareclient.com/pubkey.gpg
+    remove:
+      auto-remove: true
+      packages:
+        - cosmic-player
+        - firefox
+        - firefox-langpacks
+        - gnome-disk-utility
+        - gnome-system-monitor
+        - ark
+        - htop
+        - vim
+        - nvtop
+        - just
+        - toolbox
+        - google-noto-color-emoji-fonts
+        - kernel
+        - kernel-core
+        - kernel-modules
+        - kernel-modules-core
+        - kernel-modules-extra
     install:
       packages:
         - tldr
@@ -62,21 +83,7 @@ modules:
         - sudo-rs
         - uutils-coreutils
         - byobu
-    remove:
-      auto-remove: true
-      packages:
-        - cosmic-player
-        - firefox
-        - firefox-langpacks
-        - gnome-disk-utility
-        - gnome-system-monitor
-        - ark
-        - htop
-        - vim
-        - nvtop
-        - just
-        - toolbox
-        - google-noto-color-emoji-fonts
+        - kernel-cachyos
 
   - type: fonts
     fonts:
