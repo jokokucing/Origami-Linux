@@ -13,12 +13,63 @@ modules:
         - NetworkManager-wait-online.service
         - flatpak-add-fedora-repos.service
 
+  # 1. PRE-INSTALL: Mask hooks
+  #    - Mask dracut/ostree to prevent failure during DNF kernel install.
+  #    - Mask loaderentry to prevent 'grub2-probe' errors during manual kernel-install.
   - type: script
     snippets:
       - "ln -sf /dev/null /usr/lib/kernel/install.d/50-dracut.install"
       - "ln -sf /dev/null /usr/lib/kernel/install.d/51-dracut.install"
       - "ln -sf /dev/null /usr/lib/kernel/install.d/05-rpmostree.install"
+      - "ln -sf /dev/null /usr/lib/kernel/install.d/90-loaderentry.install"
 
+  # 2. KERNEL SWAP (Isolated Transaction)
+  - type: dnf
+    repos:
+      cleanup: true
+      copr:
+        - bieszczaders/kernel-cachyos
+        - bieszczaders/kernel-cachyos-addons
+    install:
+      packages:
+        - kernel-cachyos
+        - kernel-cachyos-devel-matched
+    remove:
+      auto-remove: true
+      packages:
+        - kernel
+        - kernel-core
+        - kernel-modules
+        - kernel-modules-core
+        - kernel-modules-extra
+
+  # 3. FIX KERNEL (Generate Initramfs & Modules)
+  - type: script
+    snippets:
+      - |
+        # Unmask the initramfs generators so we can run them manually
+        rm -f /usr/lib/kernel/install.d/50-dracut.install
+        rm -f /usr/lib/kernel/install.d/51-dracut.install
+        rm -f /usr/lib/kernel/install.d/05-rpmostree.install
+
+        # Detect CachyOS Kernel Version
+        KVER=$(ls /usr/lib/modules | grep cachyos | sort -V | tail -n1)
+
+        if [ -z "$KVER" ]; then
+            echo "ERROR: CachyOS Kernel not found in /usr/lib/modules!"
+            ls -la /usr/lib/modules
+            exit 1
+        fi
+
+        echo "Found CachyOS Kernel: $KVER"
+
+        # Generate module dependency map (Fixes dracut failure)
+        depmod -a "$KVER"
+
+        # Generate initramfs (grub hooks are still masked, so this will be clean)
+        kernel-install add "$KVER" "/usr/lib/modules/$KVER/vmlinuz"
+
+  # 4. INSTALL APPS & ADDONS (Explicit `uksmd` check)
   - type: dnf
     repos:
       cleanup: true
@@ -31,7 +82,7 @@ modules:
         - sneexy/zen-browser
         - lilay/topgrade
         - varlad/zellij
-        - bieszczaders/kernel-cachyos
+        # Re-add CachyOS repo for addons
         - bieszczaders/kernel-cachyos-addons
       files:
         - https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo
@@ -39,6 +90,12 @@ modules:
         - https://pkg.cloudflareclient.com/pubkey.gpg
     install:
       packages:
+        # Addons
+        - uksmd
+        - scx-scheds
+        - libcap-ng-devel
+        - procps-ng-devel
+        # Apps
         - tldr
         - neovim
         - python3-neovim
@@ -70,20 +127,9 @@ modules:
         - sudo-rs
         - uutils-coreutils
         - byobu
-        - kernel-cachyos
-        - kernel-cachyos-devel-matched
-        - uksmd
-        - scx-scheds
-        - libcap-ng-devel
-        - procps-ng-devel
     remove:
       auto-remove: true
       packages:
-        - kernel
-        - kernel-core
-        - kernel-modules
-        - kernel-modules-core
-        - kernel-modules-extra
         - cosmic-player
         - firefox
         - firefox-langpacks
@@ -97,17 +143,7 @@ modules:
         - toolbox
         - google-noto-color-emoji-fonts
 
-  - type: script
-    snippets:
-      # Restore hooks
-      - "rm -f /usr/lib/kernel/install.d/50-dracut.install"
-      - "rm -f /usr/lib/kernel/install.d/51-dracut.install"
-      - "rm -f /usr/lib/kernel/install.d/05-rpmostree.install"
-
-      # SINGLE CHAINED COMMAND: Detect Version -> Run depmod -> Run kernel-install
-      # This ensures variables persist across the steps.
-      - "export KVER=$(ls /usr/lib/modules | grep cachyos | sort -V | tail -n1) && echo 'Found CachyOS Kernel: '$KVER && depmod -a $KVER && kernel-install add $KVER /usr/lib/modules/$KVER/vmlinuz"
-
+  # 5. ENABLE SERVICES
   - type: systemd
     system:
       enabled:
@@ -124,9 +160,10 @@ modules:
 
   - type: script
     snippets:
-      - "setsebool -P domain_kernel_load_modules on || true"
       - "chmod -R 644 /usr/share/fonts/url-fonts/"
       - "find /usr/share/fonts/url-fonts/ -type d -exec chmod 755 {} +"
+      # Enable SELinux policy for CachyOS
+      - "setsebool -P domain_kernel_load_modules on || true"
 
   - type: default-flatpaks
     configurations:
