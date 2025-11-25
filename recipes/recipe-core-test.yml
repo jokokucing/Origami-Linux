@@ -13,7 +13,9 @@ modules:
         - NetworkManager-wait-online.service
         - flatpak-add-fedora-repos.service
 
-  # 1. PRE-INSTALL: Mask all kernel hooks to prevent failures during DNF install
+  # 1. PRE-INSTALL: Mask Kernel Hooks
+  #    This allows us to install the kernel via DNF without crashing 'dracut' immediately.
+  #    We also mask 'loaderentry' to stop the harmless but noisy 'grub2-probe' errors you saw.
   - type: script
     snippets:
       - "ln -sf /dev/null /usr/lib/kernel/install.d/50-dracut.install"
@@ -21,8 +23,10 @@ modules:
       - "ln -sf /dev/null /usr/lib/kernel/install.d/05-rpmostree.install"
       - "ln -sf /dev/null /usr/lib/kernel/install.d/90-loaderentry.install"
 
-  # 2. INSTALL: Swap Kernel and Install Apps
-  #    Note: 'uksmd' removed as it appears unavailable for Fedora 43 in this COPR
+  # 2. INSTALL: Kernel & Packages
+  #    We use DNF instead of rpm-ostree for reliability in the container.
+  #    Note: 'uksmd' is removed from here because it caused the build failure (missing in F43 repo).
+  #    We attempt to install it gracefully in step 4.
   - type: dnf
     repos:
       cleanup: true
@@ -35,6 +39,7 @@ modules:
         - sneexy/zen-browser
         - lilay/topgrade
         - varlad/zellij
+        # CachyOS Repos
         - bieszczaders/kernel-cachyos
         - bieszczaders/kernel-cachyos-addons
       files:
@@ -43,10 +48,10 @@ modules:
         - https://pkg.cloudflareclient.com/pubkey.gpg
     install:
       packages:
-        # CachyOS Kernel
+        # Official: CachyOS Kernel
         - kernel-cachyos
         - kernel-cachyos-devel-matched
-        # Addons (uksmd removed due to repo errors)
+        # Official: Dependencies for Addons
         - scx-scheds
         - libcap-ng-devel
         - procps-ng-devel
@@ -85,7 +90,7 @@ modules:
     remove:
       auto-remove: true
       packages:
-        # Remove Stock Kernel
+        # Official: Remove Stock Kernel
         - kernel
         - kernel-core
         - kernel-modules
@@ -105,23 +110,31 @@ modules:
         - toolbox
         - google-noto-color-emoji-fonts
 
-  # 3. POST-INSTALL: Fix Kernel Modules & Initramfs
-  #    Chained command ensures $KVER is detected and used in the same step.
+  # 3. POST-INSTALL: Manual Kernel Setup
+  #    This fixes the "modules.dep is missing" error by generating it manually.
+  #    Using '&&' ensures variables persist between commands.
   - type: script
     snippets:
-      # Unmask initramfs hooks (but keep loaderentry masked to stop grub errors)
+      # Restore hooks
       - "rm -f /usr/lib/kernel/install.d/50-dracut.install"
       - "rm -f /usr/lib/kernel/install.d/51-dracut.install"
       - "rm -f /usr/lib/kernel/install.d/05-rpmostree.install"
-
-      # Detect Version -> Generate modules.dep -> Build Initramfs
+      # Detect Version -> Depmod -> Initramfs
       - "export KVER=$(ls /usr/lib/modules | grep cachyos | sort -V | tail -n1) && echo 'Found CachyOS Kernel: '$KVER && depmod -a $KVER && kernel-install add $KVER /usr/lib/modules/$KVER/vmlinuz"
 
-  - type: systemd
-    system:
-      enabled:
-        - scx.service
-        # - uksmd.service (Disabled until package is available)
+  # 4. OPTIONAL COMPONENTS (Graceful Install)
+  #    We try to install/enable UKSMD and SCX here. If they fail (because they are missing
+  #    in the F43 repo), we catch the error so your build still succeeds.
+  - type: script
+    snippets:
+      # Try to install uksmd (Fails gracefully if missing)
+      - "dnf install -y uksmd || echo 'WARNING: uksmd package not found for this version, skipping.'"
+      # Try to enable uksmd service (Fails gracefully if missing)
+      - "systemctl enable uksmd.service || echo 'WARNING: uksmd.service not found, skipping.'"
+      # Try to enable scx service (Fails gracefully if missing)
+      - "systemctl enable scx.service || echo 'WARNING: scx.service not found, skipping.'"
+      # Official: Enable SELinux Policy
+      - "setsebool -P domain_kernel_load_modules on || true"
 
   - type: fonts
     fonts:
@@ -135,7 +148,6 @@ modules:
     snippets:
       - "chmod -R 644 /usr/share/fonts/url-fonts/"
       - "find /usr/share/fonts/url-fonts/ -type d -exec chmod 755 {} +"
-      - "setsebool -P domain_kernel_load_modules on || true"
 
   - type: default-flatpaks
     configurations:
