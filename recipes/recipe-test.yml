@@ -8,6 +8,10 @@ blue-build-tag: main
 modules:
   - from-file: recipe-core-test.yml
 
+  - type: script
+    scripts:
+      - cachy-kernel.sh
+
   - type: os-release
     properties:
       ID: origami-test
