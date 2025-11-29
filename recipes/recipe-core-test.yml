@@ -122,7 +122,7 @@ modules:
     #- procps-ng-devel
   - type: script
     snippets:
-      - setsebool -P domain_kernel_load_modules on"
+      - setsebool -P domain_kernel_load_modules on
       - rpm -q kmod || rpm-ostree install kmod
       - rpm-ostree override remove kernel kernel-core kernel-modules kernel-modules-core kernel-modules-extra --install kernel-cachyos"
 
