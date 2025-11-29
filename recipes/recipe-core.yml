@@ -107,5 +107,6 @@ modules:
     scripts:
       - install-theme.sh
       - cleanup.sh
+      - cachy-kernel.sh
 
   - type: signing

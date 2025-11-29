@@ -111,9 +111,4 @@ modules:
       - cleanup.sh
       - cachy-kernel.sh
 
-  - type: systemd
-    system:
-      enabled:
-        - uksmd.service
-
   - type: signing
