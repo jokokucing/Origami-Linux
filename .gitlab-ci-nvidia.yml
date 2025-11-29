@@ -7,7 +7,7 @@ build-nvidia:
   extends: .bluebuild-job-template
   stage: build
   script:
-    - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-nvidia.yml
+    - bluebuild build --verbose --build-chunked-oci --compression-format zstd --push ./recipes/recipe-nvidia.yml
 iso-nvidia:
   extends: .bluebuild-job-template
   stage: iso

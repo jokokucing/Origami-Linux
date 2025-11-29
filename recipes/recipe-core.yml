@@ -83,6 +83,8 @@ modules:
       url-fonts:
         - name: NotoColorEmoji
           url: https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf
+        - name: Maple-Mono-NF
+          url: https://github.com/subframe7536/maple-font/releases/download/v7.8/MapleMono-NF-unhinted.zip
 
   - type: script
     snippets:
