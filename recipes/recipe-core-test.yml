@@ -116,13 +116,13 @@ modules:
       - https://copr.fedorainfracloud.org/coprs/bieszczaders/kernel-cachyos/repo/fedora-%OS_VERSION%/bieszczaders-kernel-cachyos-fedora-%OS_VERSION%.repo #cachy kernel
     install:
       # - cachyos-ksm-settings - if you need cachyos-ksm-settings
-      - libcap-ng
-      - libcap-ng-devel
-      - procps-ng
-      - procps-ng-devel
+      #- libcap-ng
+      #- libcap-ng-devel
+      #- procps-ng
+      #- procps-ng-devel
   - type: script
     snippets:
       - "echo 'Enable SElinux policy' && setsebool -P domain_kernel_load_modules on"
-      - "echo 'CachyOS kernel override' && rpm-ostree override remove kernel kernel-core kernel-modules kernel-modules-core kernel-modules-extra --install kernel-cachyos"
+      - "echo 'CachyOS kernel override' && rpm-ostree override remove kernel --install kernel-cachyos"
 
   - type: signing
