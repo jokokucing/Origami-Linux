@@ -21,3 +21,5 @@ modules:
       DEFAULT_HOSTNAME: origami
 
   - type: initramfs
+
+  - type: signing

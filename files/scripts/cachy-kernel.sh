@@ -6,10 +6,10 @@ dnf -y remove \
     rm -r -f /usr/lib/modules/*
 
 # Enable repos
-dnf -y copr enable bieszczaders/kernel-cachyos
+dnf -y copr enable bieszczaders/kernel-cachyos-lto
 
 dnf -y install --setopt=install_weak_deps=False \
-    kernel-cachyos
+    kernel-cachyos-lto
 
 # Clean up repos from earlier
 rm -f /etc/yum.repos.d/{*copr*}

@@ -29,7 +29,7 @@ modules:
         - https://pkg.cloudflareclient.com/pubkey.gpg
     install:
       packages:
-        - tldr
+        - tealdeer
         - neovim
         - python3-neovim
         - zellij
@@ -104,5 +104,3 @@ modules:
     scripts:
       - install-theme.sh
       - cleanup.sh
-
-  - type: signing
