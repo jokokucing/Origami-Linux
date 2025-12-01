@@ -1,15 +1,11 @@
 # yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
 name: origami-nvidia
 description: "Origami is a next-generation Linux distribution inspired by the art of Japanese paper folding. Built on Fedora Atomic, Origami elegantly folds together cutting-edge tools, beautiful design, and thoughtful defaults to create a lightweight, customizable, and visually stunning operating system using the Cosmic desktop environment. With a focus on simplicity, speed, and creativity, Origami empowers users to shape their digital environment as effortlessly as folding a masterpiece. "
-base-image: ghcr.io/blue-build/base-images/fedora-cosmic
+base-image: ghcr.io/blue-build/base-images/fedora-cosmic-nvidia
 image-version: latest
 
 modules:
   - from-file: recipe-core.yml
-
-  - type: script
-    scripts:
-      - cachy-kernel-nvidia.sh
 
   - type: dnf
     install:
@@ -24,6 +20,10 @@ modules:
       HOME_URL: "https://origami.wf/"
       BUG_REPORT_URL: "https://gitlab.com/groups/origami-linux/-/issues"
       DEFAULT_HOSTNAME: origami
+
+  - type: script
+    snippets:
+      - "rm /var/home/joko/work/origami/Origami/files/system/etc/udev/rules.d/60-ioschedulers.rules"
 
   - type: initramfs
 
