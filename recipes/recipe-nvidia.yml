@@ -23,7 +23,7 @@ modules:
 
   - type: script
     snippets:
-      - "rm /var/home/joko/work/origami/Origami/files/system/etc/udev/rules.d/60-ioschedulers.rules"
+      - "rm /etc/udev/rules.d/60-ioschedulers.rules"
 
   - type: initramfs
 
