@@ -7,6 +7,10 @@ image-version: latest
 modules:
   - from-file: recipe-core.yml
 
+  - type: script
+    scripts:
+      - cachy-kernel-nvidia.sh
+
   - type: dnf
     install:
       packages:
