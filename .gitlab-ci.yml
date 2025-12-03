@@ -25,7 +25,7 @@ trigger-base:
         - recipes/recipe-base.yml
         - recipes/recipe-core.yml
         - .gitlab-ci-base.yml
-        - files/**/*
+        - "files/**/*"
 # --- Trigger Nvidia Pipeline ---
 trigger-nvidia:
   stage: triggers
@@ -40,7 +40,7 @@ trigger-nvidia:
         - recipes/recipe-nvidia.yml
         - recipes/recipe-core.yml
         - .gitlab-ci-nvidia.yml
-        - files/**/*
+        - "files/**/*"
 # --- Trigger Test Pipeline ---
 trigger-test:
   stage: triggers
@@ -55,4 +55,4 @@ trigger-test:
         - recipes/recipe-test.yml
         - recipes/recipe-core-test.yml
         - .gitlab-ci-test.yml
-        - files/**/*
+        - "files/**/*"
