@@ -10,7 +10,7 @@ modules:
       masked:
         - NetworkManager-wait-online.service
         - flatpak-add-fedora-repos.service
-
+  #remove later
   - type: dnf
     repos:
       cleanup: true
