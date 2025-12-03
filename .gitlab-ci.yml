@@ -11,6 +11,7 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: "$CI_COMMIT_BRANCH"
     - if: "$CI_COMMIT_TAG"
+
 # --- Trigger Base Pipeline ---
 trigger-base:
   stage: triggers
@@ -26,6 +27,7 @@ trigger-base:
         - recipes/recipe-core.yml
         - .gitlab-ci-base.yml
         - "files/**/*"
+
 # --- Trigger Nvidia Pipeline ---
 trigger-nvidia:
   stage: triggers
@@ -41,6 +43,7 @@ trigger-nvidia:
         - recipes/recipe-core.yml
         - .gitlab-ci-nvidia.yml
         - "files/**/*"
+
 # --- Trigger Test Pipeline ---
 trigger-test:
   stage: triggers
