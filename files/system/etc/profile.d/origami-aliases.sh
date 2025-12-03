@@ -24,6 +24,7 @@ function fastfetch {
 alias la='eza -la --icons'
 alias lt='eza --tree --level=2 --icons'
 
+alias nano='micro'
 alias vim='nvim'
 alias update='topgrade'
 

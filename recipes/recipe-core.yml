@@ -29,6 +29,7 @@ modules:
         - https://pkg.cloudflareclient.com/pubkey.gpg
     install:
       packages:
+        - micro
         - tealdeer
         - neovim
         - python3-neovim

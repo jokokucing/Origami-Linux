@@ -29,6 +29,7 @@ modules:
 
     install:
       packages:
+        - micro
         - tealdeer
         - neovim
         - python3-neovim
