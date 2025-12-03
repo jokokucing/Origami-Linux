@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# 1. Skip aliases and overrides when inside Distrobox
+# 1. Skip aliases and overrides when inside Distrobox.
 if [ -n "$DISTROBOX_ENTER_PATH" ]; then
     return
 fi
