@@ -5,9 +5,6 @@ if [ -n "$DISTROBOX_ENTER_PATH" ]; then
     return
 fi
 
-export VISUAL=micro
-export EDITOR=micro
-
 # 2. CLEANUP: Remove old function definitions to prevent conflicts
 unset -f grep find tmux ls ll 2>/dev/null
 
@@ -27,13 +24,6 @@ function fastfetch {
 alias la='eza -la --icons'
 alias lt='eza --tree --level=2 --icons'
 
-function _nano_nag {
-    if [ -t 2 ] && [ -z "$COMP_LINE" ]; then
-        printf 'Tip: Try using "micro" for better mouse support and syntax highlighting.\n' >&2
-    fi
-    command nano "$@"
-}
-alias nano='_nano_nag'
 alias vim='nvim'
 alias update='topgrade'
 
