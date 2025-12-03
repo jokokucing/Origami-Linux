@@ -56,6 +56,6 @@ trigger-test:
     - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
       changes:
         - recipes/recipe-test.yml
-        - recipes/recipe-core-test.yml
+        - recipes/recipe-core.yml
         - .gitlab-ci-test.yml
         - "files/**/*"
