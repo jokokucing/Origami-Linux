@@ -6,11 +6,11 @@ image-version: latest
 blue-build-tag: main
 
 modules:
-  - from-file: recipe-core-test.yml
+  - from-file: recipe-core.yml
 
   - type: script
     scripts:
-      - cachy-kernel-test.sh
+      - cachy-kernel.sh
 
   - type: os-release
     properties:

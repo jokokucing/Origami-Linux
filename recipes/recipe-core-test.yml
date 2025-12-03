@@ -2,7 +2,7 @@
 modules:
   - type: files
     files:
-      - source: system-test
+      - source: system
         destination: /
 
   - type: systemd
