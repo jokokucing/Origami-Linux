@@ -20,8 +20,11 @@ trigger-base:
     - changes:
         - recipes/recipe-base.yml
         - recipes/recipe-core.yml
+        - files/scripts/cachy-kernel.sh
+        - files/scripts/cleanup.sh
+        - files/scripts/install-theme.sh
         - .gitlab-ci-base.yml
-        - "files/**/*" # <--- Triggers if ANY file in 'files/' changes
+        - "files/system/**/*"
 # --- Trigger Nvidia Pipeline ---
 trigger-nvidia:
   stage: triggers
@@ -34,7 +37,10 @@ trigger-nvidia:
         - recipes/recipe-nvidia.yml
         - recipes/recipe-core.yml
         - .gitlab-ci-nvidia.yml
-        - "files/**/*" # <--- Triggers if ANY file in 'files/' changes
+        - files/scripts/cachy-kernel.sh
+        - files/scripts/cleanup.sh
+        - files/scripts/install-theme.sh
+        - "files/system/**/*"
 # --- Trigger Test Pipeline ---
 trigger-test:
   stage: triggers
@@ -48,4 +54,7 @@ trigger-test:
         - recipes/recipe-test.yml
         - recipes/recipe-core-test.yml
         - .gitlab-ci-test.yml
-        - "files/**/*" # <--- Triggers if ANY file in 'files/' changes
+        - files/scripts/cachy-kerne-test.sh
+        - files/scripts/cleanup-test.sh
+        - files/scripts/install-theme-test.sh
+        - "files/system-test/**/*"

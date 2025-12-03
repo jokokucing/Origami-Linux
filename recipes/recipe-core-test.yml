@@ -2,7 +2,7 @@
 modules:
   - type: files
     files:
-      - source: system
+      - source: system-test
         destination: /
 
   - type: systemd
@@ -103,5 +103,5 @@ modules:
 
   - type: script
     scripts:
-      - install-theme.sh
-      - cleanup.sh
+      - install-theme-test.sh
+      - cleanup-test.sh
