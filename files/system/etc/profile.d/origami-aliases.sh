@@ -29,7 +29,7 @@ alias lt='eza --tree --level=2 --icons'
 
 function _nano_nag {
     if [ -t 2 ] && [ -z "$COMP_LINE" ]; then
-        printf 'Tip: Try using "micro".\n' >&2
+        printf 'Tip: Try using "micro" for better mouse support and syntax highlighting.\n' >&2
     fi
     command nano "$@"
 }
