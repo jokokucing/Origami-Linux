@@ -5,6 +5,9 @@ if [ -n "$DISTROBOX_ENTER_PATH" ]; then
     return
 fi
 
+export VISUAL=micro
+export EDITOR=micro
+
 # 2. CLEANUP: Remove old function definitions to prevent conflicts
 unset -f grep find tmux ls ll 2>/dev/null
 
@@ -24,7 +27,13 @@ function fastfetch {
 alias la='eza -la --icons'
 alias lt='eza --tree --level=2 --icons'
 
-alias nano='micro'
+function _nano_nag {
+    if [ -t 2 ] && [ -z "$COMP_LINE" ]; then
+        printf 'Tip: Try using "micro".\n' >&2
+    fi
+    command nano "$@"
+}
+alias nano='_nano_nag'
 alias vim='nvim'
 alias update='topgrade'
 
@@ -39,7 +48,7 @@ ll() { command eza -l --icons "$@"; }
 alias docker='podman'
 alias docker-compose='podman-compose'
 alias cat='bat'
-alias sudo='sudo-rs'
+alias sudo='sudo-rs '
 alias su='su-rs'
 
 # --- Initializations ---
