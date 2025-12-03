@@ -23,12 +23,14 @@ modules:
         - sneexy/zen-browser
         - lilay/topgrade
         - varlad/zellij
+        - dejan/lazygit
       files:
         - https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo
       keys:
         - https://pkg.cloudflareclient.com/pubkey.gpg
     install:
       packages:
+        - lazygit
         - procs
         - du-dust
         - tealdeer
