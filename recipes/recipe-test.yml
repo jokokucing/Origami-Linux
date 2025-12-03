@@ -10,7 +10,7 @@ modules:
 
   - type: script
     scripts:
-      - cachy-kernel-test.sh
+      - cachy-kernel.sh
 
   - type: os-release
     properties:
