@@ -64,6 +64,7 @@ modules:
         - sudo-rs
         - uutils-coreutils
         - byobu
+        - micro
     remove:
       auto-remove: true
       packages:
