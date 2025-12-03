@@ -2,6 +2,8 @@ stages:
   - triggers
 default:
   interruptible: true
+variables:
+  TEST_PIPELINE_BRANCH: "test-build"
 workflow:
   rules:
     - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS && $CI_PIPELINE_SOURCE == "push"
@@ -16,6 +18,8 @@ trigger-base:
     include: .gitlab-ci-base.yml
     strategy: depend
   rules:
+    - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
+      when: never
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - changes:
         - recipes/recipe-base.yml
@@ -32,6 +36,8 @@ trigger-nvidia:
     include: .gitlab-ci-nvidia.yml
     strategy: depend
   rules:
+    - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
+      when: never
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - changes:
         - recipes/recipe-nvidia.yml
@@ -50,7 +56,8 @@ trigger-test:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
-    - changes:
+    - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
+      changes:
         - recipes/recipe-test.yml
         - recipes/recipe-core-test.yml
         - .gitlab-ci-test.yml
