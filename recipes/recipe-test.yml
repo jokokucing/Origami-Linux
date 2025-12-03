@@ -4,7 +4,8 @@ description: "Origami is a next-generation Linux distribution inspired by the ar
 base-image: ghcr.io/blue-build/base-images/fedora-cosmic
 image-version: latest
 blue-build-tag: main
-
+alt-tags:
+  - test
 modules:
   - from-file: recipe-core.yml
 
