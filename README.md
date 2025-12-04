@@ -13,3 +13,6 @@ To keep test-image builds isolated from the base and Nvidia pipelines, use a ded
 This setup ensures:
 - Base and Nvidia builds cancel only each other when new commits land on their ref.
 - Multiple test runs cancel only previous test runs on `test`, without affecting the production pipelines.
+
+
+to use the test image please rebase to `registry.gitlab.com/origami-linux/images/origami-test:br-test-43`
