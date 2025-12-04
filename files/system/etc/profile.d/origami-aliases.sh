@@ -8,9 +8,20 @@ fi
 # 2. CLEANUP: Remove old function definitions to prevent conflicts
 unset -f grep find tmux ls ll 2>/dev/null
 
-# ==========================================
-#             📦 ORIGAMI WRAPPER
-# ==========================================
+# --- Fastfetch Wrapper ---
+function fastfetch {
+    if [ $# -eq 0 ]; then
+        command fastfetch \
+            -l /usr/share/fastfetch/presets/origami/origami-ascii.txt \
+            --logo-color-1 blue \
+            -c /usr/share/fastfetch/presets/origami/origami-fastfetch.jsonc
+    else
+        command fastfetch "$@"
+    fi
+}
+
+# --- Origami Wrapper ---
+
 function origami {
     # Check if at least one argument (fold/unfold) is provided
     if [ -z "$1" ]; then
@@ -44,54 +55,34 @@ function origami {
     esac
 }
 
-# ==========================================
-#           🚀 FASTFETCH WRAPPER
-# ==========================================
-function fastfetch {
-    if [ $# -eq 0 ]; then
-        command fastfetch \
-            -l /usr/share/fastfetch/presets/origami/origami-ascii.txt \
-            --logo-color-1 blue \
-            -c /usr/share/fastfetch/presets/origami/origami-fastfetch.jsonc
-    else
-        command fastfetch "$@"
-    fi
-}
-
-# ==========================================
-#           ✨ MODERN REPLACEMENTS
-# ==========================================
-
 # --- eza Aliases ---
 alias la='eza -la --icons'
 alias lt='eza --tree --level=2 --icons'
 
-# --- Editor & System ---
 alias vim='nvim'
 alias update='topgrade'
+
+# --- eza Functions (Override ls/ll) ---
+unalias ls 2>/dev/null
+ls() { command eza --icons "$@"; }
+
+unalias ll 2>/dev/null
+ll() { command eza -l --icons "$@"; }
+
+# --- Modern Replacements ---
 alias docker='podman'
 alias docker-compose='podman-compose'
 alias cat='bat'
 alias sudo='sudo-rs '
 alias su='su-rs'
 
-# --- eza Functions (Override ls/ll) ---
-# Note: Defined as functions here to match your working script
-ls() { command eza --icons "$@"; }
-ll() { command eza -l --icons "$@"; }
-
-# ==========================================
-#             ⚙️ INITIALIZATION
-# ==========================================
+# --- Initializations ---
 # We check if these commands exist to avoid errors on bare systems
 if command -v fzf &>/dev/null; then eval "$(fzf --bash)"; fi
 if command -v starship &>/dev/null; then eval "$(starship init bash)"; fi
 if command -v zoxide &>/dev/null; then eval "$(zoxide init bash --cmd cd)"; fi
 
-# ==========================================
-#           🛠️ UUTILS COREUTILS
-# ==========================================
-# Reverted to your known-working version
+# --- uutils-coreutils Aliases ---
 for uu_bin in /usr/bin/uu_*; do
     [ -e "$uu_bin" ] || continue
     base_cmd=$(basename "$uu_bin")
@@ -101,10 +92,9 @@ for uu_bin in /usr/bin/uu_*; do
     esac
     alias "$std_cmd"="$base_cmd"
 done
+# --- End uutils ---
 
-# ==========================================
-#          💡 SAFE NAGS (EDUCATIONAL)
-# ==========================================
+# --- SAFE NAGS (Completion Aware) ---
 
 # Helper: Checks if we are in an interactive terminal AND NOT inside an autocomplete script
 function _should_nag {
@@ -116,7 +106,7 @@ function _should_nag {
 # 1. TMUX -> ZELLIJ
 function _tmux_nag {
     if _should_nag; then
-        printf '🧩 Tip: Try using "zellij" for a modern multiplexing experience.\n' >&2
+        printf 'Tip: Try using "zellij" for a modern multiplexing experience.\n' >&2
     fi
     command byobu "$@"
 }
@@ -125,7 +115,7 @@ alias tmux='_tmux_nag'
 # 2. FIND -> FD
 function _find_nag {
     if _should_nag; then
-        printf '🔎 Tip: Try using "fd" next time for a simpler and faster search.\n' >&2
+        printf 'Tip: Try using "fd" next time for a simpler and faster search.\n' >&2
     fi
     command find "$@"
 }
@@ -134,7 +124,7 @@ alias find='_find_nag'
 # 3. GREP -> RG
 function _grep_nag {
     if _should_nag; then
-        printf '⚡ Tip: Try using "rg" for a simpler and faster search.\n' >&2
+        printf 'Tip: Try using "rg" for a simpler and faster search.\n' >&2
     fi
     command grep "$@"
 }
