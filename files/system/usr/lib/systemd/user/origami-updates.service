@@ -1,0 +1,6 @@
+[Unit]
+Description=Run Topgrade System Updates
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/topgrade -y --disable firmware --skip-notify
