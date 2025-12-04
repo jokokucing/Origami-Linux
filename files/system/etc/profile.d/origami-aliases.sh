@@ -63,9 +63,6 @@ function fastfetch {
 # ==========================================
 
 # --- eza Aliases ---
-# Note: Defined as aliases here for simplicity, replacing previous function overrides
-alias ls='eza --icons'
-alias ll='eza -l --icons'
 alias la='eza -la --icons'
 alias lt='eza --tree --level=2 --icons'
 
@@ -78,9 +75,23 @@ alias cat='bat'
 alias sudo='sudo-rs '
 alias su='su-rs'
 
+# --- eza Functions (Override ls/ll) ---
+# Note: Defined as functions here to match your working script
+ls() { command eza --icons "$@"; }
+ll() { command eza -l --icons "$@"; }
+
+# ==========================================
+#             ⚙️ INITIALIZATION
+# ==========================================
+# We check if these commands exist to avoid errors on bare systems
+if command -v fzf &>/dev/null; then eval "$(fzf --bash)"; fi
+if command -v starship &>/dev/null; then eval "$(starship init bash)"; fi
+if command -v zoxide &>/dev/null; then eval "$(zoxide init bash --cmd cd)"; fi
+
 # ==========================================
 #           🛠️ UUTILS COREUTILS
 # ==========================================
+# Reverted to your known-working version
 for uu_bin in /usr/bin/uu_*; do
     [ -e "$uu_bin" ] || continue
     base_cmd=$(basename "$uu_bin")
@@ -128,11 +139,3 @@ function _grep_nag {
     command grep "$@"
 }
 alias grep='_grep_nag'
-
-# ==========================================
-#             ⚙️ INITIALIZATION
-# ==========================================
-# We check if these commands exist to avoid errors on bare systems
-if command -v fzf &>/dev/null; then eval "$(fzf --bash)"; fi
-if command -v starship &>/dev/null; then eval "$(starship init bash)"; fi
-if command -v zoxide &>/dev/null; then eval "$(zoxide init bash --cmd cd)"; fi
