@@ -3,6 +3,8 @@ name: origami-nvidia
 description: "Origami is a next-generation Linux distribution inspired by the art of Japanese paper folding. Built on Fedora Atomic, Origami elegantly folds together cutting-edge tools, beautiful design, and thoughtful defaults to create a lightweight, customizable, and visually stunning operating system using the Cosmic desktop environment. With a focus on simplicity, speed, and creativity, Origami empowers users to shape their digital environment as effortlessly as folding a masterpiece. "
 base-image: ghcr.io/blue-build/base-images/fedora-cosmic-nvidia
 image-version: latest
+alt-tags:
+  - nvidia
 
 modules:
   - from-file: recipe-core.yml
