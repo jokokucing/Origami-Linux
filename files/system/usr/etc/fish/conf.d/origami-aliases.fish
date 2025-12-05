@@ -53,7 +53,8 @@ function _nag_and_exec
     if _should_nag
         printf '%s\n' "$tip" >&2
     end
-    command "$target" "$argv"
+    # Expand $argv as separate arguments (don't quote) so the target command receives them correctly
+    command "$target" $argv
 end
 
 # --- Wrappers ----------------------------------------------------------------
@@ -119,14 +120,9 @@ end
 if type -q fzf
     fzf --fish | source
 end
-# You can disable starship by putting
-# set -gx DISABLE_STARSHIP
-# into your own fish config
-if not set -q DISABLE_STARSHIP
     if type -q starship
         starship init fish | source
     end
-end
 if type -q zoxide
     zoxide init fish | source
 end
@@ -148,10 +144,11 @@ end
 _register_uutils_aliases
 
 # --- Friendly migration nags -------------------------------------------------
-function _tmux_nag
+function tmux
+    # Forward all arguments to _nag_and_exec which will print the tip (when appropriate)
+    # and then execute the real `tmux` command with the same arguments.
     _nag_and_exec '🌀 Tip: Try using "zellij or byobu" for a modern multiplexing experience.' tmux $argv
 end
-alias tmux '_tmux_nag'
 
 function _find_nag
     _nag_and_exec '🧭 Tip: Try using "fd" next time for a simpler and faster search.' find $argv
