@@ -10,7 +10,7 @@ if [ -n "$DISTROBOX_ENTER_PATH" ]; then
 fi
 
 # --- Cleanup -----------------------------------------------------------------
-unset -f grep find tmux ls ll 2>/dev/null
+unset -f grep find tmux ls ll nano git ps du 2>/dev/null
 unalias ls 2>/dev/null
 unalias ll 2>/dev/null
 
@@ -125,16 +125,36 @@ _register_uutils_aliases
 
 # --- Friendly migration nags -------------------------------------------------
 _tmux_nag() {
-    _nag_and_exec 'Tip: Try using "zellij" for a modern multiplexing experience.' byobu "$@"
+    _nag_and_exec '🌀 Tip: Try using "zellij" for a modern multiplexing experience.' byobu "$@"
 }
 alias tmux='_tmux_nag'
 
 _find_nag() {
-    _nag_and_exec 'Tip: Try using "fd" next time for a simpler and faster search.' find "$@"
+    _nag_and_exec '🧭 Tip: Try using "fd" next time for a simpler and faster search.' find "$@"
 }
 alias find='_find_nag'
 
 _grep_nag() {
-    _nag_and_exec 'Tip: Try using "rg" for a simpler and faster search.' grep "$@"
+    _nag_and_exec '🔍 Tip: Try using "rg" for a simpler and faster search.' grep "$@"
 }
 alias grep='_grep_nag'
+
+_nano_nag() {
+    _nag_and_exec '📝 Tip: Give "micro" a try for a friendlier terminal editor.' nano "$@"
+}
+alias nano='_nano_nag'
+
+_git_nag() {
+    _nag_and_exec '🐙 Tip: Try "lazygit" for a slick TUI when working with git.' git "$@"
+}
+alias git='_git_nag'
+
+_ps_nag() {
+    _nag_and_exec '🧾 Tip: "procs" offers a richer, colorful process viewer than ps.' ps "$@"
+}
+alias ps='_ps_nag'
+
+_du_nag() {
+    _nag_and_exec '🌬️ Tip: "dust" makes disk usage checks faster and easier than du.' du "$@"
+}
+alias du='_du_nag'
