@@ -125,7 +125,7 @@ _register_uutils_aliases
 
 # --- Friendly migration nags -------------------------------------------------
 _tmux_nag() {
-    _nag_and_exec '🌀 Tip: Try using "zellij" for a modern multiplexing experience.' byobu "$@"
+    _nag_and_exec '🌀 Tip: Try using "zellij or byobu" for a modern multiplexing experience.' tmux "$@"
 }
 alias tmux='_tmux_nag'
 
