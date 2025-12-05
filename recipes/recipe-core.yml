@@ -10,6 +10,10 @@ modules:
       masked:
         - NetworkManager-wait-online.service
         - flatpak-add-fedora-repos.service
+        - bootc-fetch-apply-updates.timer
+    user:
+      enabled:
+        - origami-updates.timer
 
   - type: dnf
     repos:
