@@ -13,7 +13,7 @@ workflow:
     - if: "$CI_COMMIT_TAG"
 
 # --- Trigger Base Pipeline ---
-trigger-base:
+trigger-base-image-build:
   stage: triggers
   trigger:
     include: .gitlab-ci-base.yml
@@ -29,7 +29,7 @@ trigger-base:
         - "files/**/*"
 
 # --- Trigger Nvidia Pipeline ---
-trigger-nvidia:
+trigger-nvidia-image-build:
   stage: triggers
   trigger:
     include: .gitlab-ci-nvidia.yml
@@ -45,7 +45,7 @@ trigger-nvidia:
         - "files/**/*"
 
 # --- Trigger Test Pipeline ---
-trigger-test:
+trigger-test-image-build:
   stage: triggers
   trigger:
     include: .gitlab-ci-test.yml
@@ -58,4 +58,20 @@ trigger-test:
         - recipes/recipe-test.yml
         - recipes/recipe-core.yml
         - .gitlab-ci-test.yml
+        - "files/**/*"
+
+# --- Trigger Test Cachy Pipeline ---
+trigger-test-cachy-image-build:
+  stage: triggers
+  trigger:
+    include: .gitlab-ci-test-cachy.yml
+    strategy: depend
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
+      changes:
+        - recipes/recipe-test-cachy.yml
+        - recipes/recipe-core.yml
+        - .gitlab-ci-test-cachy.yml
         - "files/**/*"

@@ -8,10 +8,6 @@ image-version: latest
 modules:
   - from-file: recipe-core.yml
 
-  - type: script
-    scripts:
-      - cachy-kernel.sh
-
   - type: os-release
     properties:
       ID: origami-test
@@ -20,6 +16,10 @@ modules:
       HOME_URL: "https://origami.wf/"
       BUG_REPORT_URL: "https://gitlab.com/groups/origami-linux/-/issues"
       DEFAULT_HOSTNAME: origami
+
+  - type: script
+    snippets:
+      - "rm /etc/udev/rules.d/60-ioschedulers.rules"
 
   - type: initramfs
 
