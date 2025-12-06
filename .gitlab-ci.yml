@@ -28,6 +28,22 @@ trigger-base-image-build:
         - .gitlab-ci-base.yml
         - "files/**/*"
 
+# --- Trigger Base Cachy Pipeline ---
+trigger-base-cachy-image-build:
+  stage: triggers
+  trigger:
+    include: .gitlab-ci-base-cachy.yml
+    strategy: depend
+  rules:
+    - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - changes:
+        - recipes/recipe-base-cachy.yml
+        - recipes/recipe-core.yml
+        - .gitlab-ci-base-cachy.yml
+        - "files/**/*"
+
 # --- Trigger Nvidia Pipeline ---
 trigger-nvidia-image-build:
   stage: triggers
