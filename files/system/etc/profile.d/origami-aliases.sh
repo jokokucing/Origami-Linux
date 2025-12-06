@@ -54,40 +54,6 @@ fastfetch() {
     fi
 }
 
-origami() {
-    if [ -z "$1" ]; then
-        cat <<'USAGE'
-Usage: origami {fold|unfold|status} <package>
-  📂 fold   -> installs a package
-  📄 unfold -> uninstalls a package
-  📊 status -> shows rpm-ostree status
-USAGE
-        return 1
-    fi
-
-    local action="$1"
-    shift
-
-    case "$action" in
-    fold)
-        printf '📂 Folding (installing) packages: %s\n' "$*"
-        sudo rpm-ostree install "$@"
-        ;;
-    unfold)
-        printf '📄 Unfolding (uninstalling) packages: %s\n' "$*"
-        sudo rpm-ostree uninstall "$@"
-        ;;
-    status)
-        rpm-ostree status
-        ;;
-    *)
-        printf "❌ Error: Unknown action '%s'\n" "$action"
-        printf 'Try: origami fold <pkg>, origami unfold <pkg>, or origami status\n'
-        return 1
-        ;;
-    esac
-}
-
 # --- Modern replacements -----------------------------------------------------
 alias vim='nvim'
 alias update='topgrade'

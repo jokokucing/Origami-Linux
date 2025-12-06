@@ -71,34 +71,6 @@ function fastfetch
     end
 end
 
-function origami
-    if test (count $argv) -eq 0
-        echo 'Usage: origami {fold|unfold|status} <package>
-  📂 fold   -> installs a package
-  📄 unfold -> uninstalls a package
-  📊 status -> shows rpm-ostree status'
-        return 1
-    end
-
-    set action "$argv[1]"
-    set -e argv[1]
-
-    switch "$action"
-        case fold
-            printf '📂 Folding (installing) packages: %s\n' "$argv"
-            sudo rpm-ostree install "$argv"
-        case unfold
-            printf '📄 Unfolding (uninstalling) packages: %s\n' "$argv"
-            sudo rpm-ostree uninstall "$argv"
-        case status
-            rpm-ostree status
-        case '*'
-            printf "❌ Error: Unknown action '%s'\n" "$action"
-            printf 'Try: origami fold <pkg>, origami unfold <pkg>, or origami status\n'
-            return 1
-    end
-end
-
 # --- Modern replacements -----------------------------------------------------
 alias vim 'nvim'
 alias update 'topgrade'
