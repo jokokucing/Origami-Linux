@@ -3,12 +3,12 @@ include:
 stages:
   - build
   - iso
-build-base:
+build-base-image:
   extends: .bluebuild-job-template
   stage: build
   script:
     - bluebuild build --verbose --build-chunked-oci --compression-format zstd --push ./recipes/recipe-base.yml
-iso-base:
+build-base-iso:
   extends: .bluebuild-job-template
   stage: iso
   before_script:
