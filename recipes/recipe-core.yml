@@ -34,6 +34,7 @@ modules:
         - https://pkg.cloudflareclient.com/pubkey.gpg
     install:
       packages:
+        - fish
         - lazygit
         - procs
         - du-dust
