@@ -36,10 +36,12 @@ function _eval_if_available
 end
 
 function _should_nag
-    # We check if $__fish_current_command is NOT the completion command.
+    # Check if the shell is interactive and not in the middle of a completion
     if status is-interactive
         if not set -q __fish_command_line_is_being_completed
-            return 0 # True
+            if not string match -q -- "--help" $argv
+                return 0 # True
+            end
         end
     end
     return 1 # False
