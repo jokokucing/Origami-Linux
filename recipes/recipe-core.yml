@@ -70,6 +70,8 @@ modules:
         - uutils-coreutils
         - byobu
         - micro
+        - system-config-printer
+        - steam-devices
     remove:
       auto-remove: true
       packages:
