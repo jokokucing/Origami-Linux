@@ -91,3 +91,19 @@ trigger-test-cachy-image-build:
         - recipes/recipe-core.yml
         - .gitlab-ci-test-cachy.yml
         - "files/**/*"
+
+# --- Trigger Test Nvidia Pipeline ---
+trigger-test-nvidia-image-build:
+  stage: triggers
+  trigger:
+    include: .gitlab-ci-test-nvidia.yml
+    strategy: depend
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
+      changes:
+        - recipes/recipe-test-nvidia.yml
+        - recipes/recipe-core.yml
+        - .gitlab-ci-test-nvidia.yml
+        - "files/**/*"
