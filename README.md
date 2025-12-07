@@ -18,3 +18,5 @@ This setup ensures:
 to use the test image please rebase to `registry.gitlab.com/origami-linux/images/origami-test:br-test-43`
 
 to use the cachy test image please rebase to `registry.gitlab.com/origami-linux/images/origami-test:br-test-cachy-43`
+
+to use the nvidia test image please rebase to `registry.gitlab.com/origami-linux/images/origami-test:br-test-nvidia-43`
