@@ -36,9 +36,14 @@ function _eval_if_available
 end
 
 function _should_nag
-    # Check if the shell is interactive and not in the middle of a completion
+    # Only "nag" in a real, interactive terminal run of the command
+    #
+    # - status is-interactive: we're in an interactive shell
+    # - test -t 1: stdout is a TTY (completions run the command with
+    #   stdout/stderr redirected to pipes, so this will be false there)
+    # - skip when user explicitly asks for --help
     if status is-interactive
-        if not set -q __fish_command_line_is_being_completed
+        if test -t 1
             if not string match -q -- "--help" $argv
                 return 0 # True
             end
