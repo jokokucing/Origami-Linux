@@ -72,8 +72,6 @@ modules:
         - micro
         - system-config-printer
         - steam-devices
-        - printer-driver-brlaser
-        - hplip
     remove:
       auto-remove: true
       packages:
