@@ -31,7 +31,10 @@ function _eval_if_available
     set binary "$argv[1]"
     set -e argv[1]
     if _command_exists "$binary"
-        eval ("$binary" "$argv")
+        set -l output ("$binary" "$argv" 2>&1)
+        if test $status -eq 0
+            eval $output
+        end
     end
 end
 
@@ -67,10 +70,15 @@ end
 # --- Wrappers ----------------------------------------------------------------
 function fastfetch
     if test (count $argv) -eq 0
-        command fastfetch \
-            -l /usr/share/fastfetch/presets/origami/origami-ascii.txt \
-            --logo-color-1 blue \
-            -c /usr/share/fastfetch/presets/origami/origami-fastfetch.jsonc
+        set -l config_dir "/usr/share/fastfetch/presets/origami"
+        if test -f "$config_dir/origami-ascii.txt" -a -f "$config_dir/origami-fastfetch.jsonc"
+            command fastfetch \
+                -l "$config_dir/origami-ascii.txt" \
+                --logo-color-1 blue \
+                -c "$config_dir/origami-fastfetch.jsonc"
+        else
+            command fastfetch
+        end
     else
         command fastfetch $argv
     end
@@ -99,9 +107,9 @@ end
 if type -q fzf
     fzf --fish | source
 end
-    if type -q starship
-        starship init fish | source
-    end
+if type -q starship
+    starship init fish | source
+end
 if type -q zoxide
     zoxide init fish | source
 end
@@ -123,11 +131,10 @@ end
 _register_uutils_aliases
 
 # --- Friendly migration nags -------------------------------------------------
-function tmux
-    # Forward all arguments to _nag_and_exec which will print the tip (when appropriate)
-    # and then execute the real `tmux` command with the same arguments.
+function _tmux_nag
     _nag_and_exec '🌀 Tip: Try using "zellij or byobu" for a modern multiplexing experience.' tmux $argv
 end
+alias tmux '_tmux_nag'
 
 function _find_nag
     _nag_and_exec '🧭 Tip: Try using "fd" next time for a simpler and faster search.' find $argv
