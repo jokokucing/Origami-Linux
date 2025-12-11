@@ -2,8 +2,24 @@ include:
   - local: .gitlab-ci-common.yml
 stages:
   - build
+  - iso
 build-base-image-cachy:
   extends: .bluebuild-job-template
   stage: build
   script:
     - bluebuild build --verbose --build-chunked-oci --compression-format zstd --push ./recipes/recipe-base-cachy.yml
+build-base-cachy-iso:
+  extends: .bluebuild-job-template
+  stage: iso
+  before_script:
+    - !reference [.bluebuild-job-template, before_script]
+    - echo "Installing AWS CLI..."
+    - dnf install -y awscli2
+  variables:
+    ISO_NAME: "origami-cachy-x86_64.iso"
+    IMAGE_NAME: "registry.gitlab.com/origami-linux/images/origami:cachy"
+  script:
+    - bluebuild generate-iso --enrollment-password origami --iso-name $ISO_NAME image $IMAGE_NAME
+    - export AWS_ACCESS_KEY_ID=$S3_ACCESS_KEY
+    - export AWS_SECRET_ACCESS_KEY=$S3_SECRET_KEY
+    - aws s3 cp $ISO_NAME s3://origami-linux/$ISO_NAME --endpoint-url $S3_ENDPOINT_URL
