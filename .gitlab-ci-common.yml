@@ -20,6 +20,6 @@
     DOCKER_TLS_CERTDIR: /certs
     DOCKER_TLS_VERIFY: 1
     DOCKER_CERT_PATH: $DOCKER_TLS_CERTDIR/client
-    S3_ENDPOINT_URL: "eu-1.cdn77-storage.com"
+    S3_ENDPOINT_URL: "https://eu-1.cdn77-storage.com"
   before_script:
     - *setup_env
