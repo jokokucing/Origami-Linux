@@ -26,7 +26,7 @@ modules:
         - peterwu/rendezvous
         - sneexy/zen-browser
         - lilay/topgrade
-        - lilay/oru
+        - lilay/origami-linux
         - varlad/zellij
         - dejan/lazygit
       files:
@@ -35,6 +35,7 @@ modules:
         - https://pkg.cloudflareclient.com/pubkey.gpg
     install:
       packages:
+        - origami-update-applet
         - oru
         - fish
         - lazygit
