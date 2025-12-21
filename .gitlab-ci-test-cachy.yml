@@ -19,7 +19,7 @@ build-test-cachy-iso:
     # 1. Install Docker & Just FIRST
     # We must do this before referencing the template, otherwise 'docker info' will fail.
     - echo "Installing build dependencies..."
-    - dnf install -y docker just git wget awscli2 sudo
+    - dnf install -y docker just git wget awscli2 sudo which
 
     # 2. Fake Podman Wrapper
     # Titanoboa expects 'podman', so we wrap it to use the 'docker' command we just installed.
