@@ -11,51 +11,63 @@ build-test-image-cachy:
 build-test-cachy-iso:
   extends: .bluebuild-job-template
   stage: iso
-  image: fedora:43
+  image: fedora:41
 
-  # 1. RESTORED VARIABLES (Required for this specific job)
   variables:
     ISO_NAME: "origami-test-cachy-x86_64.iso"
     IMAGE_NAME: "registry.gitlab.com/origami-linux/images/origami-test"
     IMAGE_TAG: "br-test-cachy-43"
 
   before_script:
+    # 1. Install dependencies (Added 'which' to fix the installer crash)
     - echo "Installing build dependencies..."
     - dnf install -y docker just git wget awscli2 sudo which
 
-    # Fake Podman Wrapper
+    # 2. Setup Podman Wrapper
     - echo '#!/bin/bash' > /usr/bin/podman
     - echo 'docker "$@"' >> /usr/bin/podman
     - chmod +x /usr/bin/podman
 
-    # Run template setup
+    # 3. Run template setup (Docker login & secure files)
     - !reference [.bluebuild-job-template, before_script]
 
   script:
-    - git clone https://github.com/ublue-os/titanoboa.git
-
-    # 2. FIXED PATH LOGIC
-    # Check if the flatpak list exists. If not, pass "none" to Titanoboa.
+    # We use a single block scalar (|) to avoid YAML syntax errors with complex logic
     - |
+      set -e # Fail on first error
+
+      echo "Cloning Titanoboa..."
+      git clone https://github.com/ublue-os/titanoboa.git
+
+      # --- PATH SAFETY CHECKS ---
+      # 1. Flatpaks: Pass 'none' if file is missing (Prevents 'canonicalize' error)
       if [ -f "$CI_PROJECT_DIR/flatpaks/system-flatpaks.list" ]; then
-        echo "Flatpaks list found."
+        echo "✅ Flatpaks list found."
         export ABS_FLATPAK_LIST="$CI_PROJECT_DIR/flatpaks/system-flatpaks.list"
       else
-        echo "WARNING: flatpaks/system-flatpaks.list not found. Building without extra flatpaks."
+        echo "⚠️ Flatpaks list not found. Building without extra flatpaks."
         export ABS_FLATPAK_LIST="none"
       fi
 
-    - export ABS_POST_SCRIPT="$CI_PROJECT_DIR/files/scripts/origami-iso.sh"
-    - export BUILD_IMAGE="$IMAGE_NAME:$IMAGE_TAG"
+      # 2. Post-Process Script
+      export ABS_POST_SCRIPT="$CI_PROJECT_DIR/files/scripts/origami-iso.sh"
+      if [ ! -f "$ABS_POST_SCRIPT" ]; then
+        echo "❌ Error: Script not found at $ABS_POST_SCRIPT"
+        exit 1
+      fi
 
-    # Sanity Check: Ensure image name is valid
-    - if [ "$BUILD_IMAGE" == ":" ]; then echo "Error: Variables IMAGE_NAME/TAG are missing!"; exit 1; fi
+      # 3. Image Name Check
+      export BUILD_IMAGE="$IMAGE_NAME:$IMAGE_TAG"
+      if [[ "$BUILD_IMAGE" == ":" ]]; then
+        echo "❌ Error: IMAGE_NAME or IMAGE_TAG is missing."
+        exit 1
+      fi
 
-    - cd titanoboa
-    - echo "Building ISO for $BUILD_IMAGE..."
+      # --- BUILD EXECUTION ---
+      cd titanoboa
+      echo "🚀 Building ISO for $BUILD_IMAGE..."
 
-    # 3. RUN BUILD
-    - |
+      # We pass the script via env var, and 'just' handles the build
       HOOK_post_rootfs="$ABS_POST_SCRIPT" \
       sudo -E just build "$BUILD_IMAGE" \
         1 \
@@ -63,13 +75,17 @@ build-test-cachy-iso:
         squashfs \
         ""
 
-    # Move output
-    - mv *.iso "$CI_PROJECT_DIR/$ISO_NAME"
+      # --- UPLOAD ---
+      echo "📦 Processing Output..."
+      cd "$CI_PROJECT_DIR"
+      # Rename the output file (Titanoboa usually names it deploy.iso or similar)
+      mv *.iso "$ISO_NAME"
 
-    # Checksum & Upload
-    - cd "$CI_PROJECT_DIR"
-    - sha256sum "$ISO_NAME" | tee "${ISO_NAME}-CHECKSUM"
-    - export AWS_ACCESS_KEY_ID=$S3_ACCESS_KEY
-    - export AWS_SECRET_ACCESS_KEY=$S3_SECRET_KEY
-    - aws s3 cp "$ISO_NAME" s3://origami-linux/$ISO_NAME --endpoint-url $S3_ENDPOINT_URL
-    - aws s3 cp "${ISO_NAME}-CHECKSUM" s3://origami-linux/${ISO_NAME}-CHECKSUM --endpoint-url $S3_ENDPOINT_URL
+      echo "checksumming $ISO_NAME..."
+      sha256sum "$ISO_NAME" | tee "${ISO_NAME}-CHECKSUM"
+
+      echo "☁️ Uploading to S3..."
+      export AWS_ACCESS_KEY_ID=$S3_ACCESS_KEY
+      export AWS_SECRET_ACCESS_KEY=$S3_SECRET_KEY
+      aws s3 cp "$ISO_NAME" s3://origami-linux/$ISO_NAME --endpoint-url $S3_ENDPOINT_URL
+      aws s3 cp "${ISO_NAME}-CHECKSUM" s3://origami-linux/${ISO_NAME}-CHECKSUM --endpoint-url $S3_ENDPOINT_URL
