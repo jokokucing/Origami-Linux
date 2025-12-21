@@ -46,7 +46,6 @@ build-test-cachy-iso:
       sudo -E ./titanoboa \
         --image "$IMAGE_NAME:$IMAGE_TAG" \
         --output-dir "$CI_PROJECT_DIR" \
-        --flatpaks "$FLATPAKS_LIST" \
         --post-script "$POST_SCRIPT" \
         --builder-distro fedora
 
