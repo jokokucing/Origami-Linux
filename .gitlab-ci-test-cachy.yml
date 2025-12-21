@@ -11,8 +11,6 @@ build-test-image-cachy:
 build-test-cachy-iso:
   extends: .bluebuild-job-template
   stage: iso
-  tags:
-    - privileged
   before_script:
     - !reference [.bluebuild-job-template, before_script]
     - echo "Installing AWS CLI..."
