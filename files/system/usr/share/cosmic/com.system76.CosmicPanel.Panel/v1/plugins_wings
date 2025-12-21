@@ -1,6 +1,7 @@
 Some(([
     "com.system76.CosmicAppletPower",
 ], [
+    "origami-update-applet",
     "com.system76.CosmicAppletStatusArea",
     "com.system76.CosmicAppletAudio",
     "com.system76.CosmicAppletBluetooth",
