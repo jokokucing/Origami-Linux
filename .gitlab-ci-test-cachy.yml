@@ -13,39 +13,53 @@ build-test-cachy-iso:
   stage: iso
   image: fedora:43
 
-  # REMOVED: services and variables (Inherited from template)
+  # 1. RESTORED VARIABLES (Required for this specific job)
+  variables:
+    ISO_NAME: "origami-test-cachy-x86_64.iso"
+    IMAGE_NAME: "registry.gitlab.com/origami-linux/images/origami-test"
+    IMAGE_TAG: "br-test-cachy-43"
 
   before_script:
-    # 1. Install Docker & Just FIRST
-    # We must do this before referencing the template, otherwise 'docker info' will fail.
     - echo "Installing build dependencies..."
     - dnf install -y docker just git wget awscli2 sudo which
 
-    # 2. Fake Podman Wrapper
-    # Titanoboa expects 'podman', so we wrap it to use the 'docker' command we just installed.
+    # Fake Podman Wrapper
     - echo '#!/bin/bash' > /usr/bin/podman
     - echo 'docker "$@"' >> /usr/bin/podman
     - chmod +x /usr/bin/podman
 
-    # 3. NOW run the template's setup (Wait for Daemon + Login)
-    # This works now because 'docker' CLI is installed.
+    # Run template setup
     - !reference [.bluebuild-job-template, before_script]
 
   script:
     - git clone https://github.com/ublue-os/titanoboa.git
 
-    # Define absolute paths for safety
+    # 2. FIXED PATH LOGIC
+    # Check if the flatpak list exists. If not, pass "none" to Titanoboa.
+    - |
+      if [ -f "$CI_PROJECT_DIR/flatpaks/system-flatpaks.list" ]; then
+        echo "Flatpaks list found."
+        export ABS_FLATPAK_LIST="$CI_PROJECT_DIR/flatpaks/system-flatpaks.list"
+      else
+        echo "WARNING: flatpaks/system-flatpaks.list not found. Building without extra flatpaks."
+        export ABS_FLATPAK_LIST="none"
+      fi
+
     - export ABS_POST_SCRIPT="$CI_PROJECT_DIR/files/scripts/origami-iso.sh"
     - export BUILD_IMAGE="$IMAGE_NAME:$IMAGE_TAG"
 
-    - cd titanoboa
-    - echo "Building ISO..."
+    # Sanity Check: Ensure image name is valid
+    - if [ "$BUILD_IMAGE" == ":" ]; then echo "Error: Variables IMAGE_NAME/TAG are missing!"; exit 1; fi
 
-    # Run 'just build' as per Titanoboa README
+    - cd titanoboa
+    - echo "Building ISO for $BUILD_IMAGE..."
+
+    # 3. RUN BUILD
     - |
       HOOK_post_rootfs="$ABS_POST_SCRIPT" \
       sudo -E just build "$BUILD_IMAGE" \
         1 \
+        "$ABS_FLATPAK_LIST" \
         squashfs \
         ""
 
