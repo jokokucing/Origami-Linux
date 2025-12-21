@@ -38,9 +38,9 @@ if status is-interactive
     end
 
     # --- Interactive tooling -----------------------------------------------------
-    type -q fzf; and fzf --fish | source
-    type -q zoxide; and zoxide init fish | source
-    type -q starship; and starship init fish | source
+    fzf --fish | source
+    zoxide init fish | source
+    starship init fish | source
 
 end
 
