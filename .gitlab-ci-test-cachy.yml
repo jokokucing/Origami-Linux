@@ -11,27 +11,48 @@ build-test-image-cachy:
 build-test-cachy-iso:
   extends: .bluebuild-job-template
   stage: iso
-
-  before_script:
-    - !reference [.bluebuild-job-template, before_script]
-    - echo "Installing AWS CLI..."
-    - dnf install -y awscli2
+  image: fedora:43
+  services:
+    - docker:dind
 
   variables:
     ISO_NAME: "origami-test-cachy-x86_64.iso"
-    IMAGE_NAME: "registry.gitlab.com/origami-linux/images/origami-test:br-test-cachy-43"
+    IMAGE_NAME: "registry.gitlab.com/origami-linux/images/origami-test"
+    IMAGE_TAG: "br-test-cachy-43"
+
+    DOCKER_HOST: tcp://docker:2376
+    DOCKER_TLS_CERTDIR: /certs
+    DOCKER_TLS_VERIFY: 1
+    DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+
+  before_script:
+    - !reference [.bluebuild-job-template, before_script]
+    - echo "Installing ISO build dependencies..."
+    - dnf install -y git wget awscli2 docker xorriso squashfs-tools dosfstools mtools osbuild osbuild-ostree python3-pyyaml
 
   script:
+    - echo '#!/bin/bash' > /usr/bin/podman
+    - echo 'docker "$@"' >> /usr/bin/podman
+    - chmod +x /usr/bin/podman
+
+    - echo "Cloning Titanoboa..."
+    - git clone https://github.com/ublue-os/titanoboa.git
+    - cd titanoboa
+
+    - export POST_SCRIPT="$CI_PROJECT_DIR/scripts/origami-iso.sh"
+
+    - echo "Running Titanoboa..."
     - |
-      docker run --rm --privileged \
-        -v "$CI_PROJECT_DIR:$CI_PROJECT_DIR" \
-        -w "$CI_PROJECT_DIR" \
-        -e INPUT_IMAGE_REF="$IMAGE_NAME" \
-        -e INPUT_HOOK_POST_ROOTFS="$CI_PROJECT_DIR/files/scripts/origami-iso.sh" \
-        -e INPUT_BUILDER_DISTRO="fedora" \
-        -e INPUT_KARGS="" \
-        -e INPUT_ISO_DEST="$CI_PROJECT_DIR/$ISO_NAME" \
-        ghcr.io/ublue-os/titanoboa:main
+      sudo -E ./titanoboa \
+        --image "$IMAGE_NAME:$IMAGE_TAG" \
+        --output-dir "$CI_PROJECT_DIR" \
+        --flatpaks "$FLATPAKS_LIST" \
+        --post-script "$POST_SCRIPT" \
+        --builder-distro fedora
+
+    - cd "$CI_PROJECT_DIR"
+    - ls -lh
+    - mv deploy.iso "$ISO_NAME" || mv deploy-*.iso "$ISO_NAME"
 
     - echo "Calculating Checksum..."
     - sha256sum "$ISO_NAME" | tee "${ISO_NAME}-CHECKSUM"
