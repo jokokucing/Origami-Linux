@@ -12,6 +12,7 @@ build-test-cachy-iso:
   extends: .bluebuild-job-template
   stage: iso
   image: fedora:43
+
   services:
     - docker:dind
 
@@ -19,29 +20,42 @@ build-test-cachy-iso:
     ISO_NAME: "origami-test-cachy-x86_64.iso"
     IMAGE_NAME: "registry.gitlab.com/origami-linux/images/origami-test"
     IMAGE_TAG: "br-test-cachy-43"
-
     DOCKER_HOST: tcp://docker:2376
     DOCKER_TLS_CERTDIR: /certs
     DOCKER_TLS_VERIFY: 1
     DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
 
   before_script:
-    - !reference [.bluebuild-job-template, before_script]
-    - echo "Installing ISO build dependencies..."
-    - dnf install -y git wget awscli2 docker xorriso squashfs-tools dosfstools mtools osbuild osbuild-ostree python3-pyyaml
+    # 1. Install Docker CLI and Build Dependencies FIRST
+    # We include 'sudo' because Titanoboa scripts expect it
+    - echo "Installing dependencies..."
+    - dnf install -y docker git wget awscli2 xorriso squashfs-tools dosfstools mtools osbuild osbuild-ostree python3-pyyaml sudo
+
+    # 2. NOW wait for the Docker Daemon
+    - echo "Waiting for Docker daemon..."
+    - until docker info > /dev/null 2>&1; do sleep 1; done
+
+    # 3. Log in to Registry (Replicating your .setup_env logic manually)
+    - echo "Logging in to registry..."
+    - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
 
   script:
+    # 1. Create a fake 'podman' that redirects to 'docker'
+    # Titanoboa uses 'podman' commands, but we are using the 'docker' service
     - echo '#!/bin/bash' > /usr/bin/podman
     - echo 'docker "$@"' >> /usr/bin/podman
     - chmod +x /usr/bin/podman
 
-    - echo "Cloning Titanoboa..."
+    # 2. Clone Titanoboa
     - git clone https://github.com/ublue-os/titanoboa.git
     - cd titanoboa
 
+    # 3. Define Paths
     - export POST_SCRIPT="$CI_PROJECT_DIR/scripts/origami-iso.sh"
 
-    - echo "Running Titanoboa..."
+    # 4. Run Titanoboa
+    # We use sudo -E to preserve env vars.
+    # The script will use our fake 'podman' wrapper to talk to the Docker daemon.
     - |
       sudo -E ./titanoboa \
         --image "$IMAGE_NAME:$IMAGE_TAG" \
@@ -49,14 +63,14 @@ build-test-cachy-iso:
         --post-script "$POST_SCRIPT" \
         --builder-distro fedora
 
+    # 5. Handle Output
     - cd "$CI_PROJECT_DIR"
     - ls -lh
-    - mv deploy.iso "$ISO_NAME" || mv deploy-*.iso "$ISO_NAME"
+    # Titanoboa output names vary, grab whatever ISO was made
+    - mv deploy*.iso "$ISO_NAME"
 
-    - echo "Calculating Checksum..."
+    # 6. Checksum & Upload
     - sha256sum "$ISO_NAME" | tee "${ISO_NAME}-CHECKSUM"
-
-    - echo "Uploading to S3..."
     - export AWS_ACCESS_KEY_ID=$S3_ACCESS_KEY
     - export AWS_SECRET_ACCESS_KEY=$S3_SECRET_KEY
     - aws s3 cp "$ISO_NAME" s3://origami-linux/$ISO_NAME --endpoint-url $S3_ENDPOINT_URL
