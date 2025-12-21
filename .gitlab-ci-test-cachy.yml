@@ -11,16 +11,19 @@ build-test-image-cachy:
 build-test-cachy-iso:
   extends: .bluebuild-job-template
   stage: iso
+
   before_script:
     - !reference [.bluebuild-job-template, before_script]
     - echo "Installing AWS CLI..."
     - dnf install -y awscli2
+
   variables:
     ISO_NAME: "origami-test-cachy-x86_64.iso"
     IMAGE_NAME: "registry.gitlab.com/origami-linux/images/origami-test:br-test-cachy-43"
+
   script:
     - |
-      podman run --rm --privileged \
+      docker run --rm --privileged \
         -v "$CI_PROJECT_DIR:$CI_PROJECT_DIR" \
         -w "$CI_PROJECT_DIR" \
         -e INPUT_IMAGE_REF="$IMAGE_NAME" \
