@@ -31,7 +31,7 @@ build-test-live-iso:
     script:
         # Define variables to match Titanoboa's expectations
         - export IMAGE="registry.gitlab.com/origami-linux/images/origami-test:br-test-43"
-
+        - mkdir -p work/iso-root work/rootfs
         # Execute individual steps manually to avoid the 'iso' recipe's nested check
         - just rootfs $IMAGE
         - just initramfs $IMAGE
