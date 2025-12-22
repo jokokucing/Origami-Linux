@@ -29,16 +29,21 @@ build-test-live-iso:
         - git clone https://github.com/ublue-os/titanoboa.git
         - cd titanoboa
     script:
-        - just build registry.gitlab.com/origami-linux/images/origami-test:br-test-43 1 "" squashfs
+        # Define variables to match Titanoboa's expectations
+        - export IMAGE="registry.gitlab.com/origami-linux/images/origami-test:br-test-43"
 
-        # Manually create the ISO since the 'iso' recipe refuses to run nested
-        - |
-            xorrisofs -o $CI_PROJECT_DIR/origami-test-live.iso \
-              -R -J -V "ORIGAMI_LIVE" \
-              -A "Origami Linux Live ISO" \
-              -b boot/grub/grub.cfg -no-emul-boot \
-              -boot-load-size 4 -boot-info-table \
-              ./work/iso-root
+        # Execute individual steps manually to avoid the 'iso' recipe's nested check
+        - just rootfs $IMAGE
+        - just initramfs $IMAGE
+        - just squash $IMAGE
+        - just iso-organize $IMAGE
+
+        # Final ISO creation (Manual xorriso)
+        # Note: We use the -p option to ensure directories exist
+        - mkdir -p $CI_PROJECT_DIR
+        - xorrisofs -o $CI_PROJECT_DIR/origami-test-live.iso \
+          -R -J -V "ORIGAMI_LIVE" \
+          -v ./work/iso-root
     artifacts:
         paths:
             - origami-test-live.iso
