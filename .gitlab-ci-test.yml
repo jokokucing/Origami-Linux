@@ -1,9 +1,31 @@
 include:
-  - local: .gitlab-ci-common.yml
+    - local: .gitlab-ci-common.yml
 stages:
-  - build
+    - build
+    - live-iso
 build-test-image:
-  extends: .bluebuild-job-template
-  stage: build
-  script:
-    - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-test.yml
+    extends: .bluebuild-job-template
+    stage: build
+    script:
+        - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-test.yml
+
+build-test-live-iso:
+    stage: live-iso
+    image: fedora:43
+    services:
+        - docker:29-dind
+    variables:
+        DOCKER_HOST: tcp://docker:2375
+        DOCKER_TLS_CERTDIR: ""
+        TITANOBOA_WORKDIR: "$CI_PROJECT_DIR/work"
+    before_script:
+        - dnf install -y just git podman
+        - git clone https://github.com/ublue-os/titanoboa.git
+        - cd titanoboa
+    script:
+        - just build registry.gitlab.com/origami-linux/images/origami-test:br-test-43 1 "" squashfs
+        - mv output.iso $CI_PROJECT_DIR/origami-test-live.iso
+    artifacts:
+        paths:
+            - origami-test-live.iso
+        expire_in: 1 week
