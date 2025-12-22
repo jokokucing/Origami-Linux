@@ -10,6 +10,8 @@ build-test-image:
         - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-test.yml
 
 build-test-live-iso:
+    tags:
+        - saas-linux-large-amd64
     stage: live-iso
     image: fedora:43
     services:
