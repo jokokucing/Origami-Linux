@@ -9,13 +9,15 @@ build-test-image:
     script:
         - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-test.yml
 
-build-test-live-iso:
+ build-test-live-iso:
     stage: live-iso
     image: fedora:41
     tags:
-        - saas-linux-2xlarge-amd64
+        - saas-linux-medium-amd64
     services:
+    privileged: true
         - docker:24.0.5-dind
+    privileged: true
     variables:
         DOCKER_HOST: tcp://docker:2375
         DOCKER_TLS_CERTDIR: ""
@@ -24,7 +26,7 @@ build-test-live-iso:
         - git clone https://github.com/ublue-os/titanoboa.git
         - cd titanoboa
     script:
-        - just build registry.gitlab.com/origami-linux/images/origami-test:br-test-43 1 "" squashfs
+        - just build registry.gitlab.com/origami-linux/images/origami-test:latest 1 "" squashfs
         - mv output.iso $CI_PROJECT_DIR/origami-test-live.iso
     artifacts:
         paths:
