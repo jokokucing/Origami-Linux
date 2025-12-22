@@ -14,12 +14,12 @@ build-test-live-iso:
     image: fedora:41
     tags:
         - saas-linux-2xlarge-amd64
-    services:
-        - docker:24.0.5-dind
-    variables:
-        DOCKER_HOST: tcp://docker:2376
+    # Removed 'services: docker:dind' and 'DOCKER_HOST' as they are unused by local podman
     before_script:
-        - dnf install -y just git podman
+        - dnf install -y just git podman slirp4netns
+        # Configure Podman to use slirp4netns instead of netavark
+        - mkdir -p /etc/containers
+        - echo -e "[network]\nnetwork_backend = \"slirp4netns\"" > /etc/containers/containers.conf
         - git clone https://github.com/ublue-os/titanoboa.git
         - cd titanoboa
     script:
