@@ -16,7 +16,6 @@ build-test-live-iso:
         - saas-linux-2xlarge-amd64
     services:
         - docker:24.0.5-dind
-    privileged: true
     variables:
         DOCKER_HOST: tcp://docker:2376
     before_script:
