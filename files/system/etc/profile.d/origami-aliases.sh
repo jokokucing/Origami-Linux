@@ -29,7 +29,20 @@ _eval_if_available() {
 }
 
 _should_nag() {
-    [ -t 2 ] && [ -z "$COMP_LINE" ]
+    # 1. Don't nag during completion (COMP_LINE check)
+    # 2. Don't nag if stderr isn't a TTY
+    if [ ! -t 2 ] || [ -n "$COMP_LINE" ]; then
+        return 1
+    fi
+
+    # 3. Don't nag if the user is asking for --help
+    for arg in "$@"; do
+        if [ "$arg" = "--help" ]; then
+            return 1
+        fi
+    done
+
+    return 0
 }
 
 _nag_and_exec() {
@@ -37,7 +50,9 @@ _nag_and_exec() {
     shift
     local target="$1"
     shift
-    if _should_nag; then
+
+    # Pass remaining arguments to _should_nag to check for flags
+    if _should_nag "$@"; then
         printf '%s\n' "$tip" >&2
     fi
     command "$target" "$@"
@@ -46,10 +61,16 @@ _nag_and_exec() {
 # --- Wrappers ----------------------------------------------------------------
 fastfetch() {
     if [ $# -eq 0 ]; then
-        command fastfetch \
-            -l /usr/share/fastfetch/presets/origami/origami-ascii.txt \
-            --logo-color-1 blue \
-            -c /usr/share/fastfetch/presets/origami/origami-fastfetch.jsonc
+        local config_dir="/usr/share/fastfetch/presets/origami"
+        # Safety check: only load custom config if files exist
+        if [ -f "$config_dir/origami-ascii.txt" ] && [ -f "$config_dir/origami-fastfetch.jsonc" ]; then
+            command fastfetch \
+                -l "$config_dir/origami-ascii.txt" \
+                --logo-color-1 blue \
+                -c "$config_dir/origami-fastfetch.jsonc"
+        else
+            command fastfetch
+        fi
     else
         command fastfetch "$@"
     fi
