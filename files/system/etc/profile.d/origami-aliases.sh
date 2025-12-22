@@ -60,7 +60,7 @@ alias update='topgrade'
 alias docker='podman'
 alias docker-compose='podman-compose'
 alias cat='bat'
-alias sudo='sudo-rs '
+alias sudo='sudo-rs'
 alias su='su-rs'
 
 # --- Directory listings via eza ----------------------------------------------
