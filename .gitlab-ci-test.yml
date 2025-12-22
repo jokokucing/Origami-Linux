@@ -15,7 +15,7 @@ build-test-live-iso:
     tags:
         - saas-linux-2xlarge-amd64
     before_script:
-        - dnf install -y just git podman
+        - dnf install -y just git podman xorriso
         - mkdir -p /etc/containers
         # 1. Force host networking (prevents nftables error)
         # 2. Disable cgroups (prevents OCI runtime error in unprivileged runners)
@@ -30,7 +30,15 @@ build-test-live-iso:
         - cd titanoboa
     script:
         - just build registry.gitlab.com/origami-linux/images/origami-test:br-test-43 1 "" squashfs
-        - mv output.iso $CI_PROJECT_DIR/origami-test-live.iso
+
+        # Manually create the ISO since the 'iso' recipe refuses to run nested
+        - |
+            xorrisofs -o $CI_PROJECT_DIR/origami-test-live.iso \
+              -R -J -V "ORIGAMI_LIVE" \
+              -A "Origami Linux Live ISO" \
+              -b boot/grub/grub.cfg -no-emul-boot \
+              -boot-load-size 4 -boot-info-table \
+              ./work/iso-root
     artifacts:
         paths:
             - origami-test-live.iso
