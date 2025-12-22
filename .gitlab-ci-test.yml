@@ -1,25 +1,25 @@
 include:
     - local: .gitlab-ci-common.yml
 stages:
-    - build
+    # - build
     - live-iso
-build-test-image:
-    extends: .bluebuild-job-template
-    stage: build
-    script:
-        - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-test.yml
+# build-test-image:
+#     extends: .bluebuild-job-template
+#     stage: build
+#     script:
+#         - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-test.yml
 
 build-test-live-iso:
     stage: live-iso
     image: fedora:41
     tags:
         - saas-linux-2xlarge-amd64
-    # Removed 'services: docker:dind' and 'DOCKER_HOST' as they are unused by local podman
     before_script:
-        - dnf install -y just git podman slirp4netns
-        # Configure Podman to use slirp4netns instead of netavark
+        - dnf install -y just git podman
+        # Configure Podman to use host networking by default.
+        # This bypasses netavark's need to modify nftables.
         - mkdir -p /etc/containers
-        - echo -e "[network]\nnetwork_backend = \"slirp4netns\"" > /etc/containers/containers.conf
+        - echo -e "[containers]\nnetns = \"host\"" > /etc/containers/containers.conf
         - git clone https://github.com/ublue-os/titanoboa.git
         - cd titanoboa
     script:
