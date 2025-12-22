@@ -26,8 +26,6 @@ build-test-live-iso:
             cgroupns = "host"
             cgroups = "disabled"
             EOF
-        # 3. Use VFS storage (OverlayFS often fails inside unprivileged containers)
-        - echo -e "[storage]\ndriver = \"vfs\"" > /etc/containers/storage.conf
         - git clone https://github.com/ublue-os/titanoboa.git
         - cd titanoboa
     script:
