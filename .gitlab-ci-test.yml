@@ -9,17 +9,16 @@ build-test-image:
     script:
         - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-test.yml
 
- build-test-live-iso:
+build-test-live-iso:
     stage: live-iso
     image: fedora:41
     tags:
-    privileged: true
         - saas-linux-medium-amd64
     services:
         - docker:24.0.5-dind
+    privileged: true
     variables:
-        DOCKER_HOST: tcp://docker:2375
-        DOCKER_TLS_CERTDIR: ""
+        DOCKER_HOST: tcp://docker:2376
     before_script:
         - dnf install -y just git podman
         - git clone https://github.com/ublue-os/titanoboa.git
