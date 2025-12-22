@@ -6,17 +6,42 @@
 
 # --- Fish Shell --------------------------------------------------------------
 
+# --- Environment guard -------------------------------------------------------
+if set -q DISTROBOX_ENTER_PATH
+    return
+end
+
 # Disable welcome message
-set fish_greeting ""
+set -g fish_greeting ""
 
 # Start in home path
 if status is-interactive
     cd $HOME
-end
 
-# --- Environment guard -------------------------------------------------------
-if set -q DISTROBOX_ENTER_PATH
-    return
+    # --- Modern replacements -----------------------------------------------------
+    alias vim nvim
+    alias update topgrade
+    alias docker podman
+    alias docker-compose podman-compose
+    alias cat bat
+    alias sudo 'sudo-rs '
+    alias su su-rs
+
+    # --- Directory listings via eza ----------------------------------------------
+    alias la 'eza -la --icons'
+    alias lt 'eza --tree --level=2 --icons'
+    function ls
+        command eza --icons $argv
+    end
+    function ll
+        command eza -l --icons $argv
+    end
+
+    # --- Interactive tooling -----------------------------------------------------
+    fzf --fish | source
+    zoxide init fish | source
+    starship init fish | source
+
 end
 
 # --- Cleanup -----------------------------------------------------------------
@@ -47,7 +72,7 @@ function _should_nag
     # - skip when user explicitly asks for --help
     if status is-interactive
         if test -t 1
-            if not string match -q -- "--help" $argv
+            if not string match -q -- --help $argv
                 return 0 # True
             end
         end
@@ -70,7 +95,7 @@ end
 # --- Wrappers ----------------------------------------------------------------
 function fastfetch
     if test (count $argv) -eq 0
-        set -l config_dir "/usr/share/fastfetch/presets/origami"
+        set -l config_dir /usr/share/fastfetch/presets/origami
         if test -f "$config_dir/origami-ascii.txt" -a -f "$config_dir/origami-fastfetch.jsonc"
             command fastfetch \
                 -l "$config_dir/origami-ascii.txt" \
@@ -82,36 +107,6 @@ function fastfetch
     else
         command fastfetch $argv
     end
-end
-
-# --- Modern replacements -----------------------------------------------------
-alias vim 'nvim'
-alias update 'topgrade'
-alias docker 'podman'
-alias docker-compose 'podman-compose'
-alias cat 'bat'
-alias sudo 'sudo-rs '
-alias su 'su-rs'
-
-# --- Directory listings via eza ----------------------------------------------
-alias la 'eza -la --icons'
-alias lt 'eza --tree --level=2 --icons'
-function ls
-    command eza --icons $argv
-end
-function ll
-    command eza -l --icons $argv
-end
-
-# --- Interactive tooling -----------------------------------------------------
-if type -q fzf
-    fzf --fish | source
-end
-if type -q starship
-    starship init fish | source
-end
-if type -q zoxide
-    zoxide init fish | source
 end
 
 # --- uutils-coreutils shims --------------------------------------------------
@@ -134,34 +129,34 @@ _register_uutils_aliases
 function _tmux_nag
     _nag_and_exec '🌀 Tip: Try using "zellij or byobu" for a modern multiplexing experience.' tmux $argv
 end
-alias tmux '_tmux_nag'
+alias tmux _tmux_nag
 
 function _find_nag
     _nag_and_exec '🧭 Tip: Try using "fd" next time for a simpler and faster search.' find $argv
 end
-alias find '_find_nag'
+alias find _find_nag
 
 function _grep_nag
     _nag_and_exec '🔍 Tip: Try using "rg" for a simpler and faster search.' grep $argv
 end
-alias grep '_grep_nag'
+alias grep _grep_nag
 
 function _nano_nag
     _nag_and_exec '📝 Tip: Give "micro" a try for a friendlier terminal editor.' nano $argv
 end
-alias nano '_nano_nag'
+alias nano _nano_nag
 
 function _git_nag
     _nag_and_exec '🐙 Tip: Try "lazygit" for a slick TUI when working with git.' git $argv
 end
-alias git '_git_nag'
+alias git _git_nag
 
 function _ps_nag
     _nag_and_exec '🧾 Tip: "procs" offers a richer, colorful process viewer than ps.' ps $argv
 end
-alias ps '_ps_nag'
+alias ps _ps_nag
 
 function _du_nag
     _nag_and_exec '🌬️ Tip: "dust" makes disk usage checks faster and easier than du.' du $argv
 end
-alias du '_du_nag'
+alias du _du_nag
