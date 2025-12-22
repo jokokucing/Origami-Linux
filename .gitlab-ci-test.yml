@@ -16,10 +16,18 @@ build-test-live-iso:
         - saas-linux-2xlarge-amd64
     before_script:
         - dnf install -y just git podman
-        # Configure Podman to use host networking by default.
-        # This bypasses netavark's need to modify nftables.
         - mkdir -p /etc/containers
-        - echo -e "[containers]\nnetns = \"host\"" > /etc/containers/containers.conf
+        # 1. Force host networking (prevents nftables error)
+        # 2. Disable cgroups (prevents OCI runtime error in unprivileged runners)
+        - |
+            cat <<EOF > /etc/containers/containers.conf
+            [containers]
+            netns = "host"
+            cgroupns = "host"
+            cgroups = "disabled"
+            EOF
+        # 3. Use VFS storage (OverlayFS often fails inside unprivileged containers)
+        - echo -e "[storage]\ndriver = \"vfs\"" > /etc/containers/storage.conf
         - git clone https://github.com/ublue-os/titanoboa.git
         - cd titanoboa
     script:
