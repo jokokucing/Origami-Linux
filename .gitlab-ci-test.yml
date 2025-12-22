@@ -29,17 +29,20 @@ build-test-live-iso:
         - git clone https://github.com/ublue-os/titanoboa.git
         - cd titanoboa
     script:
-        # Define variables to match Titanoboa's expectations
-        - export IMAGE="registry.gitlab.com/origami-linux/images/origami-test:br-test-43"
-        - mkdir -p work/iso-root work/rootfs
-        # Execute individual steps manually to avoid the 'iso' recipe's nested check
-        - just rootfs $IMAGE
-        - just initramfs $IMAGE
-        - just squash $IMAGE
-        - just iso-organize $IMAGE
+        # Define the image variable for just
+        - export IMG="registry.gitlab.com/origami-linux/images/origami-test:br-test-43"
 
-        # Final ISO creation (Manual xorriso)
-        # Note: We use the -p option to ensure directories exist
+        # 1. Prep directories
+        - mkdir -p work/iso-root work/rootfs
+
+        # 2. Run steps by explicitly assigning the 'image' variable
+        - just image=$IMG rootfs
+        - just image=$IMG initramfs
+        - just image=$IMG squash
+        - just image=$IMG iso-organize
+        - just image=$IMG process-grub-template
+
+        # 3. Manual ISO creation to bypass the nested container check
         - mkdir -p $CI_PROJECT_DIR
         - xorrisofs -o $CI_PROJECT_DIR/origami-test-live.iso \
           -R -J -V "ORIGAMI_LIVE" \
