@@ -1,54 +1,9 @@
 include:
     - local: .gitlab-ci-common.yml
 stages:
-    # - build
-    - live-iso
-# build-test-image:
-#     extends: .bluebuild-job-template
-#     stage: build
-#     script:
-#         - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-test.yml
-
-build-test-live-iso:
-    stage: live-iso
-    image: fedora:41
-    tags:
-        - saas-linux-2xlarge-amd64
-    before_script:
-        - dnf install -y just git podman xorriso
-        - mkdir -p /etc/containers
-        # 1. Force host networking (prevents nftables error)
-        # 2. Disable cgroups (prevents OCI runtime error in unprivileged runners)
-        - |
-            cat <<EOF > /etc/containers/containers.conf
-            [containers]
-            netns = "host"
-            cgroupns = "host"
-            cgroups = "disabled"
-            EOF
-        - git clone https://github.com/ublue-os/titanoboa.git
-        - cd titanoboa
+    - build
+build-test-image:
+    extends: .bluebuild-job-template
+    stage: build
     script:
-        # Titanoboa internal variables
-        - export image="registry.gitlab.com/origami-linux/images/origami-test:br-test-43"
-        - export container_image=$image
-
-        # 1. Prep
-        - mkdir -p work/iso-root work/rootfs
-
-        # 2. Run steps. Passing as positional arguments as per Justfile definitions.
-        - just rootfs "$image"
-        - just initramfs "$image"
-        - just squash "$image"
-        - just iso-organize "$image"
-        - just process-grub-template
-
-        # 3. Manual ISO creation
-        - mkdir -p $CI_PROJECT_DIR
-        - xorrisofs -o $CI_PROJECT_DIR/origami-test-live.iso \
-          -R -J -V "ORIGAMI_LIVE" \
-          ./work/iso-root
-    artifacts:
-        paths:
-            - origami-test-live.iso
-        expire_in: 1 week
+        - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-test.yml
