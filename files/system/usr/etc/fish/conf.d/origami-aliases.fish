@@ -16,7 +16,7 @@ set -g fish_greeting ""
 
 # Start in home path
 if status is-interactive
-    cd $HOME
+    # cd $HOME
 
     # --- Modern replacements -----------------------------------------------------
     alias vim nvim
