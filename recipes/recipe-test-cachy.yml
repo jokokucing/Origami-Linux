@@ -7,9 +7,6 @@ image-version: latest
 alt-tags:
   - cachy
 
-platforms:
-  - linux/amd64
-
 modules:
   - from-file: recipe-core.yml
 
