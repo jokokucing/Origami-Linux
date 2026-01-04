@@ -1,9 +1,9 @@
 include:
-    - local: .gitlab-ci-common.yml
+  - local: .gitlab-ci-common.yml
 stages:
-    - build
+  - build
 build-test-image:
-    extends: .bluebuild-job-template
-    stage: build
-    script:
-        - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-test.yml
+  extends: .bluebuild-job-template
+  stage: build
+  script:
+    - bluebuild build --verbose --build-chunked-oci --compression-format zstd --push ./recipes/recipe-test.yml
