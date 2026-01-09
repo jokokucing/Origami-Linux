@@ -8,11 +8,11 @@ alt-tags:
   - cachy
 
 modules:
-  - from-file: recipe-core.yml
-
   - type: script
     scripts:
       - cachy-kernel.sh
+
+  - from-file: recipe-core.yml
 
   - type: os-release
     properties:
