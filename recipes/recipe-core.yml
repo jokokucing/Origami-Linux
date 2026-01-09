@@ -45,6 +45,8 @@ modules:
         - topgrade
         - zen-browser
         - rsms-inter-fonts
+        - google-noto-sans-myanmar-fonts
+        - google-noto-serif-myanmar-fonts
         - bibata-cursor-themes
         - cloudflare-warp
         - lolcat
