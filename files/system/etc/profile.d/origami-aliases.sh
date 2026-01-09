@@ -143,3 +143,11 @@ ps() {
 du() {
     _nag_and_exec '🌬️ Tip: "dust" makes disk usage checks faster and easier than du.' du "$@"
 }
+
+vim() {
+    _nag_and_exec '📝 Tip: Try using Helix next time: run "hx" (instead of vim).' vim "$@"
+}
+
+nvim() {
+    _nag_and_exec '📝 Tip: Try using Helix next time: run "hx" (instead of nvim).' nvim "$@"
+}
