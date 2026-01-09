@@ -6,4 +6,4 @@ build-nvidia-test-image:
   extends: .bluebuild-job-template
   stage: build
   script:
-    - bluebuild build --verbose --build-chunked-oci --compression-format zstd --push ./recipes/recipe-test-nvidia.yml
+    - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-test-nvidia.yml
