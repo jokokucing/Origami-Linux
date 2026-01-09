@@ -36,6 +36,7 @@ modules:
         - oru
         - fish
         - lazygit
+        - helix
         - procs
         - du-dust
         - tealdeer

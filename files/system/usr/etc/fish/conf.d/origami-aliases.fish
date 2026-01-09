@@ -160,3 +160,13 @@ function _du_nag
     _nag_and_exec '🌬️ Tip: "dust" makes disk usage checks faster and easier than du.' du $argv
 end
 alias du _du_nag
+
+function _vim_nag
+    _nag_and_exec '📝 Tip: Try using Helix with "hx" for a modern terminal editor.' vim $argv
+end
+alias vim _vim_nag
+
+function _nvim_nag
+    _nag_and_exec '📝 Tip: Try using Helix with "hx" for a modern terminal editor.' nvim $argv
+end
+alias nvim _nvim_nag
