@@ -24,6 +24,7 @@ modules:
         - sneexy/zen-browser
         - lilay/topgrade
         - lilay/origami-linux
+        - lilay/gigawatt
         - varlad/zellij
         - dejan/lazygit
       files:
@@ -34,6 +35,7 @@ modules:
       packages:
         - origami-update-applet
         - oru
+        - gigawatt
         - fish
         - lazygit
         - helix
