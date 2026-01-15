@@ -20,6 +20,7 @@ if status is-interactive
 
     # --- Modern replacements -----------------------------------------------------
     alias vim nvim
+    alias htop btop
     alias update topgrade
     alias docker podman
     alias docker-compose podman-compose
