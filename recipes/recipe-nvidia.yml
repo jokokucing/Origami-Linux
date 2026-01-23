@@ -5,6 +5,9 @@ base-image: ghcr.io/blue-build/base-images/fedora-cosmic-nvidia
 image-version: latest
 #blue-build-tag: main
 
+platforms:
+  - linux/amd64/v2
+
 modules:
   - from-file: recipe-core.yml
 
