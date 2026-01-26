@@ -1,9 +1,0 @@
-include:
-  - local: .gitlab-ci-common.yml
-stages:
-  - build
-build-test-image-arm64:
-  extends: .bluebuild-job-template
-  stage: build
-  script:
-    - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-test-arm64.yml
