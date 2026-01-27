@@ -21,7 +21,7 @@ if status is-interactive
     # --- Modern replacements -----------------------------------------------------
     alias vim nvim
     alias htop btop
-    alias update topgrade
+    alias update 'topgrade --disable tldr'
     alias docker podman
     alias docker-compose podman-compose
     alias cat bat
