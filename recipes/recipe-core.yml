@@ -25,6 +25,7 @@ modules:
         - lilay/topgrade
         - lilay/origami-linux
         - lilay/gigawatt
+        - lilay/tealdeer
         - varlad/zellij
         - dejan/lazygit
       files:
@@ -41,7 +42,6 @@ modules:
         - helix
         - procs
         - du-dust
-        - tealdeer
         - neovim
         - python3-neovim
         - zellij
@@ -77,6 +77,9 @@ modules:
         - micro
         - system-config-printer
         - steam-devices
+        - repo: copr:copr.fedorainfracloud.org:lilay:tealdeer
+          packages:
+            - tealdeer
     remove:
       auto-remove: true
       packages:
