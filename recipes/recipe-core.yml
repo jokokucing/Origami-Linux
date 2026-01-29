@@ -25,6 +25,7 @@ modules:
         - lilay/topgrade
         - lilay/origami-linux
         - lilay/gigawatt
+        - lilay/tldr
         - varlad/zellij
         - dejan/lazygit
       files:
@@ -41,7 +42,7 @@ modules:
         - helix
         - procs
         - du-dust
-        - tealdeer
+        - tldr
         - neovim
         - python3-neovim
         - zellij
