@@ -11,10 +11,10 @@ platforms:
 alt-tags:
   - cachy
 
-modules:
-  - type: custom-kernel
-    kernel: cachyos-lto
-    adios-scheduler: true
+  #modules:
+  #  - type: custom-kernel
+  #    kernel: cachyos-lto
+  #    adios-scheduler: true
 
   - from-file: recipe-core.yml
 
