@@ -15,14 +15,39 @@ if [[ -f /etc/os-release ]]; then
 fi
 
 # Read configuration
-log "Ensuring jq is installed."
-dnf -y install jq
+CONFIG_JSON="${1:-{}}"
 
-KERNEL_TYPE="$(echo "${1:-{}}" | jq -r 'try .["kernel"] // "cachyos-lto"')"
-REMOVE_DEFAULT_KERNEL="$(echo "${1:-{}}" | jq -r 'try .["remove-default-kernel"] // "true"')"
-ENABLE_COPR="$(echo "${1:-{}}" | jq -r 'try .["enable-copr"] // "true"')"
-INSTALL_WEAK_DEPS="$(echo "${1:-{}}" | jq -r 'try .["install-weak-deps"] // "false"')"
-ADIOS_SCHEDULER="$(echo "${1:-{}}" | jq -r 'try .["adios-scheduler"] // "false"')"
+get_cfg() {
+    local key="$1"
+    local default="$2"
+
+    if command -v jq >/dev/null 2>&1; then
+        echo "$CONFIG_JSON" | jq -r --arg key "$key" --arg default "$default" 'try .[$key] // $default'
+        return
+    fi
+
+    if command -v python3 >/dev/null 2>&1; then
+        python3 - "$key" "$default" "$CONFIG_JSON" <<'PY'
+import json, sys
+key, default, raw = sys.argv[1], sys.argv[2], sys.argv[3]
+try:
+    data = json.loads(raw)
+except Exception:
+    data = {}
+val = data.get(key, default)
+print(val)
+PY
+        return
+    fi
+
+    echo "$default"
+}
+
+KERNEL_TYPE="$(get_cfg "kernel" "cachyos-lto")"
+REMOVE_DEFAULT_KERNEL="$(get_cfg "remove-default-kernel" "true")"
+ENABLE_COPR="$(get_cfg "enable-copr" "true")"
+INSTALL_WEAK_DEPS="$(get_cfg "install-weak-deps" "false")"
+ADIOS_SCHEDULER="$(get_cfg "adios-scheduler" "false")"
 
 # Resolve kernel settings
 COPR_REPO=""
