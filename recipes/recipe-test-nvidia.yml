@@ -29,10 +29,6 @@ modules:
       BUG_REPORT_URL: "https://gitlab.com/groups/origami-linux/-/issues"
       DEFAULT_HOSTNAME: origami
 
-  - type: script
-    snippets:
-      - "rm /etc/udev/rules.d/60-ioschedulers.rules"
-
   - type: initramfs
 
   - type: signing

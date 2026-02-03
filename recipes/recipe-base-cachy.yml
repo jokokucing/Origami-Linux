@@ -13,9 +13,9 @@ alt-tags:
   - cachy
 
 modules:
-  - type: script
-    scripts:
-      - cachy-kernel.sh
+  - type: custom-kernel
+    kernel: cachyos-lto
+    adios-scheduler: true
 
   - from-file: recipe-core.yml
 
