@@ -22,6 +22,7 @@ fi
 # We use 'try' and default values to prevent the script from crashing if options are missing.
 KERNEL_TYPE=$(echo "$1" | jq -r 'try .["kernel"] // "cachyos-lto"')
 ADIOS_SCHEDULER=$(echo "$1" | jq -r 'try .["adios-scheduler"] // "false"')
+NVIDIA=$(echo "$1" | jq -r 'try .["nvidia"] // "false"')
 
 # 3. Resolve kernel settings based on the kernel type
 COPR_REPOS=()
@@ -100,6 +101,8 @@ cachyos-lts)
     ;;
 esac
 
+KERNEL_RPM_QUERY="${KERNEL_PACKAGES[0]}"
+
 HOOKS_DISABLED=false
 
 restore_kernel_install_hooks() {
@@ -162,6 +165,60 @@ log "Installing kernel packages: ${KERNEL_PACKAGES[*]}"
 dnf -y install \
     "${KERNEL_PACKAGES[@]}" \
     "${EXTRA_PACKAGES[@]}"
+
+if [[ "${NVIDIA}" == "true" ]]; then
+    log "Enabling Nvidia repositories."
+    curl -fsSL -o /etc/yum.repos.d/nvidia-container-toolkit.repo https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo
+    curl -fsSL -o /etc/yum.repos.d/fedora-nvidia.repo https://negativo17.org/repos/fedora-nvidia.repo
+
+    log "Installing Nvidia kernel module packages."
+    cp /usr/sbin/akmodsbuild /usr/sbin/akmodsbuild.backup
+    sed -i '/if \[\[ -w \/var \]\] ; then/,/fi/d' /usr/sbin/akmodsbuild
+    dnf install -y --setopt=install_weak_deps=False --setopt=tsflags=noscripts akmod-nvidia nvidia-kmod-common nvidia-modprobe
+    akmods --force --verbose --kernels "$(rpm -q "${KERNEL_RPM_QUERY}" --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}')" --kmod "nvidia"
+    mv /usr/sbin/akmodsbuild.backup /usr/sbin/akmodsbuild
+
+    log "Installing Nvidia userspace packages."
+    dnf install -y --setopt=skip_unavailable=1 \
+        libva-nvidia-driver \
+        nvidia-driver \
+        nvidia-persistenced \
+        nvidia-settings \
+        nvidia-driver-cuda \
+        libnvidia-cfg \
+        libnvidia-fbc \
+        libnvidia-ml \
+        libnvidia-gpucomp \
+        nvidia-driver-libs.i686 \
+        nvidia-driver-cuda-libs.i686 \
+        libnvidia-fbc.i686 \
+        libnvidia-ml.i686 \
+        libnvidia-gpucomp.i686 \
+        nvidia-container-toolkit
+
+    if command -v semodule >/dev/null 2>&1 && [[ -f /usr/share/silvercachy/nvidia-container.pp ]]; then
+        semodule -i /usr/share/silvercachy/nvidia-container.pp
+        rm -f /usr/share/silvercachy/nvidia-container.pp
+    fi
+
+    rm -f /etc/yum.repos.d/fedora-nvidia.repo
+    rm -f /etc/yum.repos.d/nvidia-container-toolkit.repo
+
+    mkdir -p /etc/modprobe.d
+    cat >/etc/modprobe.d/blacklist-nouveau.conf <<'EOF'
+blacklist nouveau
+options nouveau modeset=0
+options nvidia-drm modeset=1 fbdev=1
+EOF
+
+    if command -v rpm-ostree >/dev/null 2>&1; then
+        rpm-ostree kargs \
+            --append=rd.driver.blacklist=nouveau \
+            --append=modprobe.blacklist=nouveau \
+            --append=nvidia-drm.modeset=1 \
+            --append=nvidia-drm.fbdev=1
+    fi
+fi
 
 # 8. Restore kernel install scripts and cleanup extras
 log "Restoring kernel install scripts."
