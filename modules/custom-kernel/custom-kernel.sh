@@ -15,6 +15,9 @@ if [[ -f /etc/os-release ]]; then
 fi
 
 # Read configuration
+log "Ensuring jq is installed."
+dnf -y install jq
+
 KERNEL_TYPE="$(echo "${1:-{}}" | jq -r 'try .["kernel"] // "cachyos-lto"')"
 REMOVE_DEFAULT_KERNEL="$(echo "${1:-{}}" | jq -r 'try .["remove-default-kernel"] // "true"')"
 ENABLE_COPR="$(echo "${1:-{}}" | jq -r 'try .["enable-copr"] // "true"')"
