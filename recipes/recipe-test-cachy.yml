@@ -13,6 +13,7 @@ alt-tags:
 
 modules:
   - type: custom-kernel
+    source: local
     kernel: cachyos-lto
     adios-scheduler: true
 
