@@ -27,6 +27,7 @@ trigger-base-image-build:
         - recipes/recipe-core.yml
         - .gitlab-ci-base.yml
         - "files/**/*"
+        - "modules/**/*"
 
 # --- Trigger Base Cachy Pipeline ---
 trigger-base-cachy-image-build:
@@ -43,6 +44,7 @@ trigger-base-cachy-image-build:
         - recipes/recipe-core.yml
         - .gitlab-ci-base-cachy.yml
         - "files/**/*"
+        - "modules/**/*"
 
 # --- Trigger Nvidia Pipeline ---
 trigger-nvidia-image-build:
@@ -59,6 +61,7 @@ trigger-nvidia-image-build:
         - recipes/recipe-core.yml
         - .gitlab-ci-nvidia.yml
         - "files/**/*"
+        - "modules/**/*"
 
 # --- Trigger Test Pipeline ---
 trigger-test-image-build:
@@ -75,6 +78,7 @@ trigger-test-image-build:
         - recipes/recipe-core.yml
         - .gitlab-ci-test.yml
         - "files/**/*"
+        - "modules/**/*"
 
 # --- Trigger Test Cachy Pipeline ---
 trigger-test-cachy-image-build:
@@ -91,6 +95,7 @@ trigger-test-cachy-image-build:
         - recipes/recipe-core.yml
         - .gitlab-ci-test-cachy.yml
         - "files/**/*"
+        - "modules/**/*"
 
 # --- Trigger Test Nvidia Pipeline ---
 trigger-test-nvidia-image-build:
@@ -107,3 +112,4 @@ trigger-test-nvidia-image-build:
         - recipes/recipe-core.yml
         - .gitlab-ci-test-nvidia.yml
         - "files/**/*"
+        - "modules/**/*"
