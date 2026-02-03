@@ -23,8 +23,8 @@ trigger-base-image-build:
       when: never
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - changes:
-        - recipes/recipe-base.yml
-        - recipes/recipe-core.yml
+        - recipes/base.yml
+        - recipes/core.yml
         - .gitlab-ci-base.yml
         - .gitlab-ci.yml
         - "files/**/*"
@@ -41,8 +41,8 @@ trigger-base-cachy-image-build:
       when: never
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - changes:
-        - recipes/recipe-base-cachy.yml
-        - recipes/recipe-core.yml
+        - recipes/base-cachy.yml
+        - recipes/core.yml
         - .gitlab-ci-base-cachy.yml
         - .gitlab-ci.yml
         - "files/**/*"
@@ -59,8 +59,8 @@ trigger-nvidia-image-build:
       when: never
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - changes:
-        - recipes/recipe-nvidia.yml
-        - recipes/recipe-core.yml
+        - recipes/nvidia.yml
+        - recipes/core.yml
         - .gitlab-ci-nvidia.yml
         - .gitlab-ci.yml
         - "files/**/*"
@@ -77,8 +77,8 @@ trigger-test-image-build:
       when: never
     - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
       changes:
-        - recipes/recipe-test.yml
-        - recipes/recipe-core.yml
+        - recipes/test.yml
+        - recipes/core.yml
         - .gitlab-ci-test.yml
         - .gitlab-ci.yml
         - "files/**/*"
@@ -95,8 +95,8 @@ trigger-test-cachy-image-build:
       when: never
     - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
       changes:
-        - recipes/recipe-test-cachy.yml
-        - recipes/recipe-core.yml
+        - recipes/test-cachy.yml
+        - recipes/core.yml
         - .gitlab-ci-test-cachy.yml
         - .gitlab-ci.yml
         - "files/**/*"
@@ -113,8 +113,8 @@ trigger-test-nvidia-image-build:
       when: never
     - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
       changes:
-        - recipes/recipe-test-nvidia.yml
-        - recipes/recipe-core.yml
+        - recipes/test-nvidia.yml
+        - recipes/core.yml
         - .gitlab-ci-test-nvidia.yml
         - .gitlab-ci.yml
         - "files/**/*"

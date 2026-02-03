@@ -9,7 +9,7 @@ platforms:
   - linux/amd64
 
 modules:
-  - from-file: recipe-core.yml
+  - from-file: core.yml
 
   - type: dnf
     install:

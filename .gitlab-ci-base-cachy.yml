@@ -7,7 +7,7 @@ build-base-image-cachy:
   extends: .bluebuild-job-template
   stage: build
   script:
-    - bluebuild build --verbose --build-chunked-oci --compression-format zstd --push ./recipes/recipe-base-cachy.yml
+    - bluebuild build --verbose --build-chunked-oci --compression-format zstd --push ./recipes/base-cachy.yml
 build-base-cachy-iso:
   extends: .bluebuild-job-template
   stage: iso

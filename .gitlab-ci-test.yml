@@ -6,4 +6,4 @@ build-test-image:
   extends: .bluebuild-job-template
   stage: build
   script:
-    - bluebuild build --verbose --compression-format zstd --push ./recipes/recipe-test.yml
+    - bluebuild build --verbose --compression-format zstd --push ./recipes/test.yml
