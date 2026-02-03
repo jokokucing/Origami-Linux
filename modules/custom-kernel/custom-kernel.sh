@@ -211,7 +211,7 @@ options nouveau modeset=0
 options nvidia-drm modeset=1 fbdev=1
 EOF
 
-    if command -v rpm-ostree >/dev/null 2>&1; then
+    if command -v rpm-ostree >/dev/null 2>&1 && [[ -f /run/ostree-booted ]]; then
         rpm-ostree kargs \
             --append=rd.driver.blacklist=nouveau \
             --append=modprobe.blacklist=nouveau \
