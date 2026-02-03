@@ -12,15 +12,16 @@ alt-tags:
   - cachy
 
 modules:
-  - type: script
-    scripts:
-      - cachy-kernel.sh
+  - type: custom-kernel
+    kernel: cachyos-lto
+    adios-scheduler: true
 
   - from-file: recipe-core.yml
 
   - type: os-release
     properties:
       ID: origami-test
+      ID_LIKE: fedora
       NAME: Origami Linux Test
       PRETTY_NAME: Origami 折り紙
       HOME_URL: "https://origami.wf/"
