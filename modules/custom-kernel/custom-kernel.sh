@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+#set -euo pipefail
 
 # The blue-build environment provides helper functions like get_json_array.
 # This log function helps track progress in the build logs.
