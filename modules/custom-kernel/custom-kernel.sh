@@ -63,6 +63,9 @@ if [[ "${REMOVE_DEFAULT_KERNEL}" == "true" ]]; then
 fi
 
 if [[ "${ENABLE_COPR}" == "true" ]]; then
+    log "Ensuring COPR plugin is installed."
+    dnf -y install dnf-plugins-core
+
     log "Enabling COPR repo: ${COPR_REPO}"
     dnf -y copr enable "${COPR_REPO}"
 fi
