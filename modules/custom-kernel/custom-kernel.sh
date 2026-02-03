@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-set -x
-
-trap 'echo "[custom-kernel] Error on line $LINENO. Last command: $BASH_COMMAND" >&2' ERR
 
 log() {
     echo "[custom-kernel] $*"
@@ -95,5 +92,7 @@ fi
 # Clean up repo files added by COPR
 rm -f /etc/yum.repos.d/*copr* || true
 
-# Allow kernel module loading
-setsebool -P domain_kernel_load_modules on
+# Allow kernel module loading (skip if setsebool isn't available in the build environment)
+if command -v setsebool >/dev/null 2>&1; then
+    setsebool -P domain_kernel_load_modules on
+fi
