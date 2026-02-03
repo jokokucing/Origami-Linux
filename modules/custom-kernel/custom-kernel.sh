@@ -22,7 +22,7 @@ fi
 # We use 'try' and default values to prevent the script from crashing if options are missing.
 KERNEL_TYPE=$(echo "$1" | jq -r 'try .["kernel"] // "cachyos-lto"')
 REMOVE_DEFAULT_KERNEL=$(echo "$1" | jq -r 'try .["remove-default-kernel"] // "true"')
-ENABLE_COPR=$(echo "$1" | jq -r 'try .["enable-copr"] // "true"')
+
 INSTALL_WEAK_DEPS=$(echo "$1" | jq -r 'try .["install-weak-deps"] // "false"')
 ADIOS_SCHEDULER=$(echo "$1" | jq -r 'try .["adios-scheduler"] // "false"')
 
@@ -64,11 +64,9 @@ if [[ "${REMOVE_DEFAULT_KERNEL}" == "true" ]]; then
     rm -rf /usr/lib/modules/* || true
 fi
 
-# 5. Enable COPR repository
-if [[ "${ENABLE_COPR}" == "true" ]]; then
-    log "Enabling COPR repo: ${COPR_REPO}"
-    dnf -y copr enable "${COPR_REPO}"
-fi
+# 5. Enable COPR repository (required for custom kernels)
+log "Enabling COPR repo: ${COPR_REPO}"
+dnf -y copr enable "${COPR_REPO}"
 
 # 6. Install the new kernel
 log "Installing kernel package: ${KERNEL_PACKAGE}"
