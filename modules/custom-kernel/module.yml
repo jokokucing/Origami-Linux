@@ -7,7 +7,6 @@ example: |
 
   # Optional settings
   remove-default-kernel: true   # remove stock kernel packages and modules
-  enable-copr: true             # enable required COPR repo
   install-weak-deps: false      # install weak dependencies
   adios-scheduler: false        # write adios IO scheduler udev rules (CachyOS only)
 
