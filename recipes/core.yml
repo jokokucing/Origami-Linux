@@ -16,24 +16,20 @@ modules:
     repos:
       cleanup: true
       copr:
-        - lihaohong/yazi
-        - alternateved/eza
         - atim/starship
-        - dejan/rpms
-        - peterwu/rendezvous
         - sneexy/zen-browser
-        - lilay/topgrade
         - lilay/origami-linux
         - lilay/gigawatt
         - lilay/tealdeer
-        - varlad/zellij
         - dejan/lazygit
       files:
         - https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo
+        - https://repos.fyralabs.com/terra%OS_VERSION%
       keys:
         - https://pkg.cloudflareclient.com/pubkey.gpg
     install:
       packages:
+        - terra-release
         - origami-update-applet
         - oru
         - gigawatt
@@ -50,7 +46,7 @@ modules:
         - rsms-inter-fonts
         - google-noto-sans-myanmar-fonts
         - google-noto-serif-myanmar-fonts
-        - bibata-cursor-themes
+        - bibata-cursor-theme
         - cloudflare-warp
         - lolcat
         - figlet
@@ -70,7 +66,6 @@ modules:
         - starship
         - cbonsai
         - cmatrix
-        - tty-clock
         - sudo-rs
         - uutils-coreutils
         - byobu
