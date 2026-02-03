@@ -23,12 +23,13 @@ modules:
         - lilay/tealdeer
         - dejan/lazygit
       files:
+        - https://github.com/terrapkg/subatomic-repos/raw/main/terra.repo
         - https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo
       keys:
         - https://pkg.cloudflareclient.com/pubkey.gpg
     install:
       packages:
-        - https://repos.fyralabs.com/terra%OS_VERSION%/terra-release.noarch.rpm
+        - terra-release
         - origami-update-applet
         - oru
         - gigawatt
