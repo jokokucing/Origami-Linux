@@ -24,12 +24,11 @@ modules:
         - dejan/lazygit
       files:
         - https://pkg.cloudflareclient.com/cloudflare-warp-ascii.repo
-        - https://repos.fyralabs.com/terra%OS_VERSION%
       keys:
         - https://pkg.cloudflareclient.com/pubkey.gpg
     install:
       packages:
-        - terra-release
+        - https://repos.fyralabs.com/terra%OS_VERSION%/terra-release.noarch.rpm
         - origami-update-applet
         - oru
         - gigawatt
