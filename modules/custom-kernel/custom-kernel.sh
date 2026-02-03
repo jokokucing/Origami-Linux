@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
+set -x
+
+trap 'echo "[custom-kernel] Error on line $LINENO. Last command: $BASH_COMMAND" >&2' ERR
 
 log() {
     echo "[custom-kernel] $*"
