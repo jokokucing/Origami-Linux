@@ -11,7 +11,7 @@ platforms:
 alt-tags:
   - cachy
 
-  #modules:
+modules:
   #  - type: custom-kernel
   #    kernel: cachyos-lto
   #    adios-scheduler: true
