@@ -9,7 +9,7 @@ platforms:
   - linux/amd64
 
 alt-tags:
-  - cachy-nvidia
+  - nvidia-cachy
 
 modules:
   - type: custom-kernel
