@@ -27,3 +27,8 @@ example: |
   type: custom-kernel
   kernel: cachyos-lts
   adios-scheduler: false        # write adios IO scheduler udev rules (CachyOS only)
+
+  # Install Nvidia drivers on top of the custom kernel
+  type: custom-kernel
+  kernel: cachyos-lto
+  nvidia: true
