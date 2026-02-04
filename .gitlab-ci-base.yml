@@ -7,7 +7,7 @@ build-base-image:
   extends: .bluebuild-job-template
   stage: build
   script:
-    - bluebuild build --verbose --compression-format zstd --push ./recipes/base.yml
+    - bluebuild build --verbose --build-chunked-oci --compression-format zstd --push ./recipes/base.yml
 build-base-iso:
   extends: .bluebuild-job-template
   stage: iso
