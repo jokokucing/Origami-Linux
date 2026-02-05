@@ -15,7 +15,6 @@ modules:
   - type: custom-kernel
     source: local
     kernel: cachyos-lto
-    adios-scheduler: true
     secrets:
       - type: file
         source: .secure_files/MOK.key
