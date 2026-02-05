@@ -18,7 +18,7 @@ modules:
     nvidia: true
     adios-scheduler: true
     sign:
-      key: .secure_files/MOK.key
+      key: /tmp/MOK.key
       mok-password: origami
 
   - from-file: core.yml
