@@ -27,9 +27,9 @@ example: |
   initramfs: true       # Default: false
   nvidia: true          # Default: false
   sign:                 # Optional
-    key: /path/to/key
+    key: /tmp/certs/MOK.priv
+    cert: /path/to/cert # PEM format
     mok-password: BlueBuild
-    mok-issuer: BlueBuild
   secrets:
   - type: file
     source: ./MOK.priv

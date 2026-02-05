@@ -12,6 +12,11 @@ alt-tags:
   - nvidia
 
 modules:
+  - type: files
+    files:
+      - source: system
+        destination: /
+
   - from-file: core.yml
 
   - type: dnf
