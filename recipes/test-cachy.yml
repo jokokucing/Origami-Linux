@@ -17,7 +17,7 @@ modules:
     kernel: cachyos-lto
     adios-scheduler: true
     sign:
-      key: /tmp/MOK.key
+      key: /tmp/certs/MOK.key
       mok-password: origami
 
   - from-file: core.yml
