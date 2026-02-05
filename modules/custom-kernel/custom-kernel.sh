@@ -25,7 +25,6 @@ fi
 # 2. Read configuration from the first argument ($1) using jq
 # We use 'try' and default values to prevent the script from crashing if options are missing.
 KERNEL_TYPE=$(echo "$1" | jq -r 'try .["kernel"] // "cachyos-lto"')
-ADIOS_SCHEDULER=$(echo "$1" | jq -r 'try .["adios-scheduler"] // "false"')
 NVIDIA=$(echo "$1" | jq -r 'try .["nvidia"] // "false"')
 SIGNING_KEY=$(echo "$1" | jq -r 'try .sign["key"] // ""')
 MOK_PASSWORD=$(echo "$1" | jq -r 'try .sign["mok-password"] // ""')
@@ -215,7 +214,7 @@ if [[ "${NVIDIA}" == "true" ]]; then
     rm -f nvidia-container.pp
 
     # Container toolkit
-    cat >/usr/lib/systemd/system/nvctk-cdi.service <<'EOF'
+    install -D /dev/stdin /usr/lib/systemd/system/nvctk-cdi.service <<'EOF'
 [Unit]
 Description=NVIDIA Container Toolkit CDI auto-generation
 ConditionFileIsExecutable=/usr/bin/nvidia-ctk
@@ -230,20 +229,19 @@ ExecStart=/usr/bin/nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
 WantedBy=multi-user.target
 EOF
 
-    cat >/usr/lib/systemd/system-preset/70-nvctk-cdi.preset <<'EOF'
+    install -D /dev/stdin /usr/lib/systemd/system-preset/70-nvctk-cdi.preset <<'EOF'
 enable nvctk-cdi.service
 EOF
 
     # Kernel modules
-    mkdir -p /etc/modprobe.d
-    cat >/etc/modprobe.d/blacklist-nouveau.conf <<'EOF'
+    install -D /dev/stdin /etc/modprobe.d/nvidia.conf <<'EOF'
 blacklist nouveau
 options nouveau modeset=0
 options nvidia-drm modeset=1 fbdev=1
 EOF
 
     # Initramfs
-    cat >/usr/lib/dracut/dracut.conf.d/99-nvidia.conf <<'EOF'
+    install -D /dev/stdin /usr/lib/dracut/dracut.conf.d/99-nvidia.conf <<'EOF'
 # Force the i915 amdgpu nvidia drivers to the ramdisk
 force_drivers+=" i915 amdgpu nvidia nvidia_drm nvidia_modeset nvidia_peermem nvidia_uvm "
 EOF
@@ -263,26 +261,7 @@ log "Restoring kernel install scripts."
 restore_kernel_install_hooks
 HOOKS_DISABLED=false
 
-# 9. Apply IO Scheduler udev rules (CachyOS specific)
-if [[ "${ADIOS_SCHEDULER}" == "true" ]]; then
-    log "Writing IO scheduler udev rules (adios)."
-    mkdir -p /etc/udev/rules.d
-    cat >/etc/udev/rules.d/60-ioschedulers.rules <<'EOF'
-# HDD
-ACTION=="add|change", KERNEL=="sd[a-z]*", ATTR{queue/rotational}=="1", \
-    ATTR{queue/scheduler}="bfq"
-
-# SSD
-ACTION=="add|change", KERNEL=="sd[a-z]*|mmcblk[0-9]*", ATTR{queue/rotational}=="0", \
-    ATTR{queue/scheduler}="adios"
-
-# NVMe SSD
-ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/rotational}=="0", \
-    ATTR{queue/scheduler}="adios"
-EOF
-fi
-
-# 10. Sign the kernel and modules
+# 9. Sign the kernel and modules
 sign_kernel_modules() {
     local KEY="$1"
 
@@ -292,12 +271,14 @@ sign_kernel_modules() {
     fi
 
     # Create the public key from private key
-    local CERT="/tmp/MOK.pem"
-    openssl req -new -x509 -key "$KEY" -out "$CERT" -days 36500 -subj "/CN=Module Signing/"
-    if [ ! -f "$CERT" ]; then
-        error "PEM file couldn't be created: $CERT"
-        return 1
-    fi
+    local CERT
+    CERT="$(mktemp)"
+
+    openssl req -new -x509 \
+        -key "$KEY" \
+        -out "$CERT" \
+        -days 36500 \
+        -subj "/CN=Module Signing/" || return 1
 
     # Detect kernel
     local KVER
@@ -358,7 +339,7 @@ create_mok_enroll_unit() {
     local PASSWORD="$2"
     local UNIT_NAME="mok-enroll.service"
     local UNIT_FILE="/usr/lib/systemd/system/$UNIT_NAME"
-    local DER_PATH="/usr/local/share/cert"
+    local DER_PATH="/usr/share/cert"
 
     if [ -z "$KEY" ] || [ -z "$PASSWORD" ]; then
         error "Wrong arguments for create_mok_enroll_unit <signing-key> <mok-password>: $KEY $PASSWORD"
@@ -366,19 +347,24 @@ create_mok_enroll_unit() {
     fi
 
     # Create the DER file for MOK enrollment
-    mkdir -p "$DER_PATH"
-    openssl req -new -x509 -key "$KEY" -outform DER -out "$DER_PATH/MOK.der" -days 36500 -subj "/CN=MOK/"
-    if [ ! -f "$DER_PATH/MOK.der" ]; then
-        error "DER file couldn't be created: $DER_PATH/MOK.der"
-        return 1
-    fi
+    tmp="$(mktemp)"
 
-    cat >"$UNIT_FILE" <<EOF
+    openssl req \
+        -new -x509 \
+        -key "$KEY" \
+        -outform DER \
+        -out "$tmp" \
+        -days 36500 \
+        -subj "/CN=MOK/"
+
+    install -D -m 0644 "$tmp" "$DER_PATH/MOK.der"
+    rm -f "$tmp"
+
+    install -D /dev/stdin "$UNIT_FILE" <<EOF
 [Unit]
 Description=Enroll MOK key on first boot
 ConditionPathExists=$DER_PATH/MOK.der
 ConditionPathExists=!/var/.mok-enrolled
-After=local-fs.target
 
 [Service]
 Type=oneshot
@@ -399,26 +385,7 @@ if [[ -f "$SIGNING_KEY" && -n "$MOK_PASSWORD" ]]; then
     create_mok_enroll_unit "$SIGNING_KEY" "$MOK_PASSWORD" || exit 1
 fi
 
-# 11. Cleanup and System Configuration
+# 10. Cleanup and System Configuration
 rm -f /etc/yum.repos.d/*copr* || true
-
-if command -v setsebool >/dev/null 2>&1; then
-    if command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled; then
-        if [[ -f /etc/selinux/config ]]; then
-            SELINUXTYPE=$(awk -F= '/^SELINUXTYPE=/{print $2}' /etc/selinux/config | tr -d ' ')
-        fi
-
-        if [[ -n "${SELINUXTYPE:-}" && -d "/etc/selinux/${SELINUXTYPE}" ]]; then
-            log "Updating SELinux policies for kernel modules."
-            if ! setsebool -P domain_kernel_load_modules on; then
-                log "Skipping SELinux boolean update (policy store not writable in build env)."
-            fi
-        else
-            log "SELinux policy store missing; skipping boolean update."
-        fi
-    else
-        log "SELinux not enabled; skipping boolean update."
-    fi
-fi
 
 log "Custom kernel installation complete."

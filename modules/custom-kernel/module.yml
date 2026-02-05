@@ -5,35 +5,32 @@ example: |
   type: custom-kernel
   kernel: cachyos-lto
 
-  # Optional settings (CachyOS only)
-  adios-scheduler: false        # write adios IO scheduler udev rules (CachyOS only)
-
   # Use the CachyOS LTS LTO kernel
   type: custom-kernel
   kernel: cachyos-lts-lto
-  adios-scheduler: false        # write adios IO scheduler udev rules (CachyOS only)
 
   # Use the CachyOS (non-LTO) kernel
   type: custom-kernel
   kernel: cachyos
-  adios-scheduler: false        # write adios IO scheduler udev rules (CachyOS only)
 
   # Use the CachyOS RT (non-LTO) kernel
   type: custom-kernel
   kernel: cachyos-rt
-  adios-scheduler: false        # write adios IO scheduler udev rules (CachyOS only)
 
   # Use the CachyOS LTS (non-LTO) kernel
   type: custom-kernel
   kernel: cachyos-lts
-  adios-scheduler: false        # write adios IO scheduler udev rules (CachyOS only)
 
-  # Install Nvidia drivers on top of the custom kernel
+  # Install Nvidia drivers on top of the custom kernel and sign ev erything
   type: custom-kernel
   kernel: cachyos-lto
   nvidia: true
-
-  # Sign the kernel and modules with the custom MOK key and set the MOK enroll password
   sign:
     key: /path/to/key
-    mok-password: origami
+    mok-password: scachy
+  secrets:
+  - type: file
+    source: ./MOK.priv
+    mount:
+      type: file
+      destination: /tmp/certs/MOK.priv

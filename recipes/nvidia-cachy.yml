@@ -16,7 +16,6 @@ modules:
     source: local
     kernel: cachyos-lto
     nvidia: true
-    adios-scheduler: true
     secrets:
       - type: file
         source: .secure_files/MOK.key
