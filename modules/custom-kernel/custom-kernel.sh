@@ -29,20 +29,43 @@ NVIDIA=$(echo "$1" | jq -r '.nvidia // false')
 
 SIGNING_KEY=$(echo "$1" | jq -r '.sign.key // ""')
 
+SIGNING_CERT=$(echo "$1" | jq -r '.sign.cert // ""')
+
 MOK_PASSWORD=$(echo "$1" | jq -r '.sign["mok-password"] // ""')
 
-MOK_ISSUER=$(echo "$1" | jq -r '(.sign["mok-issuer"] // "" | select(length>0)) // "MOK"')
-
 # Checking key, cert and password. Can't continue without them
-if [[ -z "$SIGNING_KEY" && -z "$MOK_PASSWORD" ]]; then
+if [[ -z "$SIGNING_KEY" && -z "$SIGNING_CERT" && -z "$MOK_PASSWORD" ]]; then
     log "SecureBoot signing disabled."
-elif [[ -f "$SIGNING_KEY" && -n "$MOK_PASSWORD" ]]; then
+elif [[ -f "$SIGNING_KEY" && -f "$SIGNING_CERT" && -n "$MOK_PASSWORD" ]]; then
     log "SecureBoot signing enabled."
 else
     error "Invalid signing config:"
     error "  sign.key:  ${SIGNING_KEY:-<empty>}"
+    error "  sign.cert:  ${SIGNING_CERT:-<empty>}"
     error "  sign.mok-password: ${MOK_PASSWORD:+<set>}${MOK_PASSWORD:-<empty>}"
     exit 1
+fi
+
+# Double check everything about keys and certs
+if [[ -f "$SIGNING_KEY" && -f "$SIGNING_CERT" && -n "$MOK_PASSWORD" ]]; then
+    openssl pkey -in "$SIGNING_KEY" -noout >/dev/null 2>&1 ||
+        {
+            error "sign.key is not a valid private key"
+            exit 1
+        }
+
+    openssl x509 -in "$SIGNING_CERT" -noout >/dev/null 2>&1 ||
+        {
+            error "sign.cert is not a valid X509 cert"
+            exit 1
+        }
+
+    if ! diff -q \
+        <(openssl pkey -in "$SIGNING_KEY" -pubout) \
+        <(openssl x509 -in "$SIGNING_CERT" -pubkey -noout); then
+        error "sign.key and sign.cert do not match"
+        exit 1
+    fi
 fi
 
 # 3. Resolve kernel settings based on the kernel type
@@ -294,23 +317,6 @@ fi
 
 # 6. Sign the kernel and modules
 sign_kernel_modules() {
-    local KEY="$1"
-
-    if [ -z "$KEY" ]; then
-        error "Wrong arguments for sign_kernel_modules <signing-key>: $KEY"
-        return 1
-    fi
-
-    # Create the public key from private key
-    local CERT
-    CERT="$(mktemp)"
-
-    openssl req -new -x509 \
-        -key "$KEY" \
-        -out "$CERT" \
-        -days 36500 \
-        -subj "/CN=$(printf '%s' "$MOK_ISSUER")/" || return 1
-
     local MODULE_ROOT="/usr/lib/modules/$KERNEL_VERSION"
     local VMLINUZ="$MODULE_ROOT/vmlinuz"
     local SIGN_FILE="$MODULE_ROOT/build/scripts/sign-file"
@@ -318,9 +324,14 @@ sign_kernel_modules() {
     # Sign kernel image
     if [ -f "$VMLINUZ" ]; then
         log "Signing kernel image: $VMLINUZ"
-        sbsign --key "$KEY" --cert "$CERT" --output "$VMLINUZ" "$VMLINUZ"
+        sbsign --key "$SIGNING_KEY" --cert "$SIGNING_CERT" --output "$VMLINUZ" "$VMLINUZ"
     else
         error "Can't find kernel image: $VMLINUZ"
+        return 1
+    fi
+
+    if [[ ! -x "$SIGN_FILE" ]]; then
+        error "sign-file not found or not executable: $SIGN_FILE"
         return 1
     fi
 
@@ -328,69 +339,59 @@ sign_kernel_modules() {
     while IFS= read -r -d '' mod; do
         case "$mod" in
         *.ko)
-            "$SIGN_FILE" sha256 "$KEY" "$CERT" "$mod" || return 1
+            "$SIGN_FILE" sha256 "$SIGNING_KEY" "$SIGNING_CERT" "$mod" || return 1
             ;;
         *.ko.xz)
             xz -d "$mod"
             raw="${mod%.xz}"
-            "$SIGN_FILE" sha256 "$KEY" "$CERT" "$raw" || return 1
+            "$SIGN_FILE" sha256 "$SIGNING_KEY" "$SIGNING_CERT" "$raw" || return 1
             xz -z "$raw"
             ;;
         *.ko.zst)
             zstd -d --rm "$mod"
             raw="${mod%.zst}"
-            "$SIGN_FILE" sha256 "$KEY" "$CERT" "$raw" || return 1
+            "$SIGN_FILE" sha256 "$SIGNING_KEY" "$SIGNING_CERT" "$raw" || return 1
             zstd -q "$raw"
             ;;
         *.ko.gz)
             gunzip "$mod"
             raw="${mod%.gz}"
-            "$SIGN_FILE" sha256 "$KEY" "$CERT" "$raw" || return 1
+            "$SIGN_FILE" sha256 "$SIGNING_KEY" "$SIGNING_CERT" "$raw" || return 1
             gzip "$raw"
             ;;
         esac
     done < <(find "$MODULE_ROOT" -type f \( -name "*.ko" -o -name "*.ko.xz" -o -name "*.ko.zst" -o -name "*.ko.gz" \) -print0)
 
-    rm -f "$CERT"
     log "Done signing kernel + modules for $KERNEL_VERSION"
 }
 
 create_mok_enroll_unit() {
-    local KEY="$1"
-    local PASSWORD="$2"
     local UNIT_NAME="mok-enroll.service"
     local UNIT_FILE="/usr/lib/systemd/system/$UNIT_NAME"
-    local DER_PATH="/usr/share/cert"
+    local MOK_CERT_DER="/usr/share/cert/MOK.der"
+    local TMP_DER
 
-    if [ -z "$KEY" ] || [ -z "$PASSWORD" ]; then
-        error "Wrong arguments for create_mok_enroll_unit <signing-key> <mok-password>: $KEY $PASSWORD"
-        return 1
-    fi
+    TMP_DER="$(mktemp)"
 
-    # Create the DER file for MOK enrollment
-    local CERT
-    CERT="$(mktemp)"
-
-    openssl req \
-        -new -x509 \
-        -key "$KEY" \
+    openssl x509 \
+        -in "$SIGNING_CERT" \
         -outform DER \
-        -out "$CERT" \
-        -days 36500 \
-        -subj "/CN=$(printf '%s' "$MOK_ISSUER")/" || return 1
-
-    install -D -m 0644 "$CERT" "$DER_PATH/MOK.der"
-    rm -f "$CERT"
+        -out "$TMP_DER" || {
+        rm -f "$TMP_DER"
+        return 1
+    }
+    install -D -m 0644 "$TMP_DER" "$MOK_CERT_DER"
+    rm -f "$TMP_DER"
 
     install -D -m 0644 /dev/stdin "$UNIT_FILE" <<EOF
 [Unit]
 Description=Enroll MOK key on first boot
-ConditionPathExists=$DER_PATH/MOK.der
+ConditionPathExists=$MOK_CERT_DER
 ConditionPathExists=!/var/.mok-enrolled
 
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c '(echo "$PASSWORD"; echo "$PASSWORD") | mokutil --import "$DER_PATH/MOK.der"'
+ExecStart=/bin/sh -c '(echo "$MOK_PASSWORD"; echo "$MOK_PASSWORD") | mokutil --import "$MOK_CERT_DER"'
 ExecStartPost=/usr/bin/touch /var/.mok-enrolled
 RemainAfterExit=yes
 
@@ -402,9 +403,9 @@ EOF
     log "Created and enabled $UNIT_NAME"
 }
 
-if [[ -f "$SIGNING_KEY" && -n "$MOK_PASSWORD" ]]; then
-    sign_kernel_modules "$SIGNING_KEY" || exit 1
-    create_mok_enroll_unit "$SIGNING_KEY" "$MOK_PASSWORD" || exit 1
+if [[ -f "$SIGNING_KEY" && -f "$SIGNING_CERT" && -n "$MOK_PASSWORD" ]]; then
+    sign_kernel_modules || exit 1
+    create_mok_enroll_unit || exit 1
 fi
 
 # 7. Initramfs

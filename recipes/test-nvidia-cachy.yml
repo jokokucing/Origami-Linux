@@ -18,14 +18,14 @@ modules:
     nvidia: true
     secrets:
       - type: file
-        source: .secure_files/MOK.key
+        source: .secure_files/MOK.priv
         mount:
           type: file
-          destination: /tmp/certs/MOK.key
+          destination: /tmp/certs/MOK.priv
     sign:
-      key: /tmp/certs/MOK.key
+      key: /tmp/certs/MOK.priv
+      cert: /usr/share/cert/MOK.pem
       mok-password: origami
-      mok-issuer: Origami Linux
 
   - from-file: core.yml
 
