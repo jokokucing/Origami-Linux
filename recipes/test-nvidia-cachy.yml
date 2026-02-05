@@ -17,6 +17,9 @@ modules:
     kernel: cachyos-lto
     nvidia: true
     adios-scheduler: true
+    sign:
+      key: .secure_files/MOK.key
+      mok-password: origami
 
   - from-file: core.yml
 
