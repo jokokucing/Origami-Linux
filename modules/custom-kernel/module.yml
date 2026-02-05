@@ -32,3 +32,8 @@ example: |
   type: custom-kernel
   kernel: cachyos-lto
   nvidia: true
+
+  # Sign the kernel and modules with the custom MOK key and set the MOK enroll password
+  sign:
+    key: /path/to/key
+    mok-password: origami

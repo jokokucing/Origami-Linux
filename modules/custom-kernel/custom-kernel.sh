@@ -7,13 +7,17 @@ log() {
     echo "[custom-kernel] $*"
 }
 
+error() {
+    echo "[custom-kernel] Error: $*"
+}
+
 log "Starting custom kernel installation..."
 
 # 1. Environment Check: Ensure we are on a Fedora-based image
 if [[ -f /etc/os-release ]]; then
     . /etc/os-release
     if [[ "${ID_LIKE:-}" != *"fedora"* && "${ID:-}" != "fedora" ]]; then
-        echo "[custom-kernel] Error: This module is intended for Fedora-based images. Detected ID=${ID:-unknown}."
+        error "This module is intended for Fedora-based images. Detected ID=${ID:-unknown}."
         exit 1
     fi
 fi
@@ -23,22 +27,32 @@ fi
 KERNEL_TYPE=$(echo "$1" | jq -r 'try .["kernel"] // "cachyos-lto"')
 ADIOS_SCHEDULER=$(echo "$1" | jq -r 'try .["adios-scheduler"] // "false"')
 NVIDIA=$(echo "$1" | jq -r 'try .["nvidia"] // "false"')
+SIGNING_KEY=$(echo "$1" | jq -r 'try .sign["key"] // ""')
+MOK_PASSWORD=$(echo "$1" | jq -r 'try .sign["mok-password"] // ""')
+
+# Check key, cert and password
+if [[ -z "$SIGNING_KEY" && -z "$MOK_PASSWORD" ]]; then
+    :
+elif [[ -f "$SIGNING_KEY" && -n "$MOK_PASSWORD" ]]; then
+    :
+else
+    error "Invalid signing config:"
+    error "  SIGNING_KEY:  ${SIGNING_KEY:-<empty>}"
+    error "  MOK_PASSWORD: ${MOK_PASSWORD:+<set>}${MOK_PASSWORD:-<empty>}"
+    exit 1
+fi
 
 # 3. Resolve kernel settings based on the kernel type
 COPR_REPOS=()
 KERNEL_PACKAGES=()
 EXTRA_PACKAGES=(
     akmods
-    cachyos-settings
-    scx-scheds
-    scx-tools
 )
 
 case "${KERNEL_TYPE}" in
 cachyos-lto)
     COPR_REPOS=(
         bieszczaders/kernel-cachyos-lto
-        bieszczaders/kernel-cachyos-addons
     )
     KERNEL_PACKAGES=(
         kernel-cachyos-lto
@@ -50,7 +64,6 @@ cachyos-lto)
 cachyos-lts-lto)
     COPR_REPOS=(
         bieszczaders/kernel-cachyos-lto
-        bieszczaders/kernel-cachyos-addons
     )
     KERNEL_PACKAGES=(
         kernel-cachyos-lts-lto
@@ -62,7 +75,6 @@ cachyos-lts-lto)
 cachyos)
     COPR_REPOS=(
         bieszczaders/kernel-cachyos
-        bieszczaders/kernel-cachyos-addons
     )
     KERNEL_PACKAGES=(
         kernel-cachyos
@@ -74,7 +86,6 @@ cachyos)
 cachyos-rt)
     COPR_REPOS=(
         bieszczaders/kernel-cachyos
-        bieszczaders/kernel-cachyos-addons
     )
     KERNEL_PACKAGES=(
         kernel-cachyos-rt
@@ -86,7 +97,6 @@ cachyos-rt)
 cachyos-lts)
     COPR_REPOS=(
         bieszczaders/kernel-cachyos
-        bieszczaders/kernel-cachyos-addons
     )
     KERNEL_PACKAGES=(
         kernel-cachyos-lts
@@ -96,7 +106,7 @@ cachyos-lts)
     )
     ;;
 *)
-    echo "[custom-kernel] Unsupported kernel type: ${KERNEL_TYPE}"
+    error "Unsupported kernel type: ${KERNEL_TYPE}"
     exit 1
     ;;
 esac
@@ -150,8 +160,7 @@ dnf -y remove \
     kernel-modules-core \
     kernel-modules-extra \
     kernel-devel \
-    kernel-devel-matched \
-    zram-generator-defaults || true
+    kernel-devel-matched || true
 rm -rf /usr/lib/modules/* || true
 
 # 6. Enable COPR repositories (required for custom kernels)
@@ -171,7 +180,7 @@ if [[ "${NVIDIA}" == "true" ]]; then
     curl -fsSL -o /etc/yum.repos.d/nvidia-container-toolkit.repo https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo
     curl -fsSL -o /etc/yum.repos.d/fedora-nvidia.repo https://negativo17.org/repos/fedora-nvidia.repo
 
-    log "Installing Nvidia kernel module packages."
+    log "Building and installing Nvidia kernel module packages."
     cp /usr/sbin/akmodsbuild /usr/sbin/akmodsbuild.backup
     sed -i '/if \[\[ -w \/var \]\] ; then/,/fi/d' /usr/sbin/akmodsbuild
     dnf install -y --setopt=install_weak_deps=False --setopt=tsflags=noscripts akmod-nvidia nvidia-kmod-common nvidia-modprobe
@@ -195,15 +204,37 @@ if [[ "${NVIDIA}" == "true" ]]; then
         libnvidia-ml.i686 \
         libnvidia-gpucomp.i686 \
         nvidia-container-toolkit
-
-    if command -v semodule >/dev/null 2>&1 && [[ -f /usr/share/silvercachy/nvidia-container.pp ]]; then
-        semodule -i /usr/share/silvercachy/nvidia-container.pp
-        rm -f /usr/share/silvercachy/nvidia-container.pp
-    fi
-
     rm -f /etc/yum.repos.d/fedora-nvidia.repo
     rm -f /etc/yum.repos.d/nvidia-container-toolkit.repo
 
+    log "Installing various Nvidia configs"
+
+    # SELinux policy
+    curl -fsSL -o nvidia-container.pp https://raw.githubusercontent.com/NVIDIA/dgx-selinux/master/bin/RHEL9/nvidia-container.pp
+    semodule -i nvidia-container.pp
+    rm -f nvidia-container.pp
+
+    # Container toolkit
+    cat >/usr/lib/systemd/system/nvctk-cdi.service <<'EOF'
+[Unit]
+Description=NVIDIA Container Toolkit CDI auto-generation
+ConditionFileIsExecutable=/usr/bin/nvidia-ctk
+ConditionPathExists=!/etc/cdi/nvidia.yaml
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    cat >/usr/lib/systemd/system-preset/70-nvctk-cdi.preset <<'EOF'
+enable nvctk-cdi.service
+EOF
+
+    # Kernel modules
     mkdir -p /etc/modprobe.d
     cat >/etc/modprobe.d/blacklist-nouveau.conf <<'EOF'
 blacklist nouveau
@@ -211,6 +242,13 @@ options nouveau modeset=0
 options nvidia-drm modeset=1 fbdev=1
 EOF
 
+    # Initramfs
+    cat >/usr/lib/dracut/dracut.conf.d/99-nvidia.conf <<'EOF'
+# Force the i915 amdgpu nvidia drivers to the ramdisk
+force_drivers+=" i915 amdgpu nvidia nvidia_drm nvidia_modeset nvidia_peermem nvidia_uvm "
+EOF
+
+    # Bootloader
     if command -v rpm-ostree >/dev/null 2>&1 && [[ -f /run/ostree-booted ]]; then
         rpm-ostree kargs \
             --append=rd.driver.blacklist=nouveau \
@@ -224,7 +262,6 @@ fi
 log "Restoring kernel install scripts."
 restore_kernel_install_hooks
 HOOKS_DISABLED=false
-rm -f /usr/bin/game-performance
 
 # 9. Apply IO Scheduler udev rules (CachyOS specific)
 if [[ "${ADIOS_SCHEDULER}" == "true" ]]; then
@@ -245,7 +282,124 @@ ACTION=="add|change", KERNEL=="nvme[0-9]*", ATTR{queue/rotational}=="0", \
 EOF
 fi
 
-# 10. Cleanup and System Configuration
+# 10. Sign the kernel and modules
+sign_kernel_modules() {
+    local KEY="$1"
+
+    if [ -z "$KEY" ]; then
+        error "Wrong arguments for sign_kernel_modules <signing-key>: $KEY"
+        return 1
+    fi
+
+    # Create the public key from private key
+    local CERT="/tmp/MOK.pem"
+    openssl req -new -x509 -key "$KEY" -out "$CERT" -days 36500 -subj "/CN=Module Signing/"
+    if [ ! -f "$CERT" ]; then
+        error "PEM file couldn't be created: $CERT"
+        return 1
+    fi
+
+    # Detect kernel
+    local KVER
+    KVER="$(rpm -q --queryformat="%{evr}.%{arch}" "${KERNEL_RPM_QUERY}")" || return 1
+    if [ -z "$KVER" ]; then
+        error "kernel-cachyos-lto not found in RPM DB"
+        return 1
+    fi
+    log "Detected kernel version: $KVER"
+
+    local MODULE_ROOT="/usr/lib/modules/$KVER"
+    local VMLINUZ="$MODULE_ROOT/vmlinuz"
+    local SIGN_FILE="$MODULE_ROOT/build/scripts/sign-file"
+
+    # Sign kernel image
+    if [ -f "$VMLINUZ" ]; then
+        log "Signing kernel image: $VMLINUZ"
+        sbsign --key "$KEY" --cert "$CERT" --output "$VMLINUZ" "$VMLINUZ"
+    else
+        error "Can't find kernel image: $VMLINUZ"
+        return 1
+    fi
+
+    log "Recursively signing modules..."
+    find "$MODULE_ROOT" -type f \( \
+        -name "*.ko" -o -name "*.ko.xz" -o -name "*.ko.zst" -o -name "*.ko.gz" \
+        \) -print0 | while IFS= read -r -d '' mod; do
+        case "$mod" in
+        *.ko)
+            "$SIGN_FILE" sha256 "$KEY" "$CERT" "$mod" || return 1
+            ;;
+        *.ko.xz)
+            xz -d "$mod"
+            raw="${mod%.xz}"
+            "$SIGN_FILE" sha256 "$KEY" "$CERT" "$raw" || return 1
+            xz -z "$raw"
+            ;;
+        *.ko.zst)
+            zstd -d --rm "$mod"
+            raw="${mod%.zst}"
+            "$SIGN_FILE" sha256 "$KEY" "$CERT" "$raw" || return 1
+            zstd -q "$raw"
+            ;;
+        *.ko.gz)
+            gunzip "$mod"
+            raw="${mod%.gz}"
+            "$SIGN_FILE" sha256 "$KEY" "$CERT" "$raw" || return 1
+            gzip "$raw"
+            ;;
+        esac
+    done
+
+    log "Done signing kernel + modules for $KVER"
+}
+
+create_mok_enroll_unit() {
+    local KEY="$1"
+    local PASSWORD="$2"
+    local UNIT_NAME="mok-enroll.service"
+    local UNIT_FILE="/usr/lib/systemd/system/$UNIT_NAME"
+    local DER_PATH="/usr/local/share/cert"
+
+    if [ -z "$KEY" ] || [ -z "$PASSWORD" ]; then
+        error "Wrong arguments for create_mok_enroll_unit <signing-key> <mok-password>: $KEY $PASSWORD"
+        return 1
+    fi
+
+    # Create the DER file for MOK enrollment
+    mkdir -p "$DER_PATH"
+    openssl req -new -x509 -key "$KEY" -outform DER -out "$DER_PATH/MOK.der" -days 36500 -subj "/CN=MOK/"
+    if [ ! -f "$DER_PATH/MOK.der" ]; then
+        error "DER file couldn't be created: $DER_PATH/MOK.der"
+        return 1
+    fi
+
+    cat >"$UNIT_FILE" <<EOF
+[Unit]
+Description=Enroll MOK key on first boot
+ConditionPathExists=$DER_PATH/MOK.der
+ConditionPathExists=!/var/.mok-enrolled
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh -c '(echo "$PASSWORD"; echo "$PASSWORD") | mokutil --import "$DER_PATH/MOK.der"'
+ExecStartPost=/usr/bin/touch /var/.mok-enrolled
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    systemctl -f enable "$UNIT_NAME"
+    log "Created and enabled $UNIT_NAME"
+}
+
+if [[ -f "$SIGNING_KEY" && -n "$MOK_PASSWORD" ]]; then
+    sign_kernel_modules "$SIGNING_KEY" || exit 1
+    create_mok_enroll_unit "$SIGNING_KEY" "$MOK_PASSWORD" || exit 1
+fi
+
+# 11. Cleanup and System Configuration
 rm -f /etc/yum.repos.d/*copr* || true
 
 if command -v setsebool >/dev/null 2>&1; then
