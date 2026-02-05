@@ -9,6 +9,11 @@ platforms:
   - linux/amd64
 
 modules:
+  - type: files
+    files:
+      - source: system
+        destination: /
+
   - from-file: core.yml
 
   - type: os-release

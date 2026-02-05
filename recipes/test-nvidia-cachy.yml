@@ -12,6 +12,11 @@ alt-tags:
   - nvidia-cachy
 
 modules:
+  - type: files
+    files:
+      - source: system
+        destination: /
+
   - type: custom-kernel
     source: local
     kernel: cachyos-lto
