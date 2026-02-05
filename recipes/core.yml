@@ -50,7 +50,6 @@ modules:
         - btop
         - fastfetch
         - podman-compose
-        - axel
         - aria2
         - cava
         - bat
