@@ -28,6 +28,7 @@ example: |
   sign:
     key: /path/to/key
     mok-password: scachy
+    mok-issuer: scachy
   secrets:
   - type: file
     source: ./MOK.priv

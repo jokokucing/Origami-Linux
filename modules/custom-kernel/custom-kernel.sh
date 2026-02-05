@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# The blue-build environment provides helper functions like get_json_array.
-# This log function helps track progress in the build logs.
 log() {
     echo "[custom-kernel] $*"
 }
@@ -11,7 +9,7 @@ error() {
     echo "[custom-kernel] Error: $*"
 }
 
-log "Starting custom kernel installation..."
+log "Starting custom-kernel module..."
 
 # 1. Environment Check: Ensure we are on a Fedora-based image
 if [[ -f /etc/os-release ]]; then
@@ -23,21 +21,21 @@ if [[ -f /etc/os-release ]]; then
 fi
 
 # 2. Read configuration from the first argument ($1) using jq
-# We use 'try' and default values to prevent the script from crashing if options are missing.
 KERNEL_TYPE=$(echo "$1" | jq -r 'try .["kernel"] // "cachyos-lto"')
 NVIDIA=$(echo "$1" | jq -r 'try .["nvidia"] // "false"')
 SIGNING_KEY=$(echo "$1" | jq -r 'try .sign["key"] // ""')
 MOK_PASSWORD=$(echo "$1" | jq -r 'try .sign["mok-password"] // ""')
+MOK_ISSUER=$(echo "$1" | jq -r '(.sign["mok-issuer"] // "MOK") | select(length>0) // "MOK"')
 
-# Check key, cert and password
+# Checking key, cert and password. Can't continue without them
 if [[ -z "$SIGNING_KEY" && -z "$MOK_PASSWORD" ]]; then
-    :
+    log "SecureBoot signing disabled."
 elif [[ -f "$SIGNING_KEY" && -n "$MOK_PASSWORD" ]]; then
-    :
+    log "SecureBoot signing enabled."
 else
     error "Invalid signing config:"
-    error "  SIGNING_KEY:  ${SIGNING_KEY:-<empty>}"
-    error "  MOK_PASSWORD: ${MOK_PASSWORD:+<set>}${MOK_PASSWORD:-<empty>}"
+    error "  sign.key:  ${SIGNING_KEY:-<empty>}"
+    error "  sign.mok-password: ${MOK_PASSWORD:+<set>}${MOK_PASSWORD:-<empty>}"
     exit 1
 fi
 
@@ -110,10 +108,6 @@ cachyos-lts)
     ;;
 esac
 
-KERNEL_RPM_QUERY="${KERNEL_PACKAGES[0]}"
-
-HOOKS_DISABLED=false
-
 restore_kernel_install_hooks() {
     local rpmostree=/usr/lib/kernel/install.d/05-rpmostree.install
     local dracut=/usr/lib/kernel/install.d/50-dracut.install
@@ -134,23 +128,19 @@ disable_kernel_install_hooks() {
         mv "${rpmostree}" "${rpmostree}.bak"
         printf '%s\n' '#!/bin/sh' 'exit 0' >"${rpmostree}"
         chmod +x "${rpmostree}"
-        HOOKS_DISABLED=true
     fi
 
     if [[ -f "${dracut}" ]]; then
         mv "${dracut}" "${dracut}.bak"
         printf '%s\n' '#!/bin/sh' 'exit 0' >"${dracut}"
         chmod +x "${dracut}"
-        HOOKS_DISABLED=true
     fi
 }
 
-# 4. Temporarily disable kernel install scripts (rpmostree/dracut)
+# 4. Installing custom kernel
 log "Temporarily disabling kernel install scripts."
 disable_kernel_install_hooks
-trap 'if [[ "${HOOKS_DISABLED}" == "true" ]]; then restore_kernel_install_hooks; fi' EXIT
 
-# 5. Remove default kernel packages.
 log "Removing default kernel packages."
 dnf -y remove \
     kernel \
@@ -162,29 +152,67 @@ dnf -y remove \
     kernel-devel-matched || true
 rm -rf /usr/lib/modules/* || true
 
-# 6. Enable COPR repositories (required for custom kernels)
 for repo in "${COPR_REPOS[@]}"; do
     log "Enabling COPR repo: ${repo}"
     dnf -y copr enable "${repo}"
 done
 
-# 7. Install the new kernel
 log "Installing kernel packages: ${KERNEL_PACKAGES[*]}"
 dnf -y install \
     "${KERNEL_PACKAGES[@]}" \
     "${EXTRA_PACKAGES[@]}"
+
+KERNEL_VERSION="$(rpm -q "${KERNEL_PACKAGES[0]}" --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}')" || exit 1
+log "Detected kernel version: $KERNEL_VERSION"
+
+log "Restoring kernel install scripts."
+restore_kernel_install_hooks
+
+log "Cleaning up custom kernel repos."
+rm -f "/etc/yum.repos.d/"*copr* 2>/dev/null || true
+
+# 5. Install Nvidia if needed
+disable_akmodsbuild() {
+    local ak="/usr/sbin/akmodsbuild"
+    local bak="${ak}.backup"
+
+    if [[ ! -f "$ak" ]]; then
+        error "akmodsbuild not found: $ak"
+        return 1
+    fi
+
+    cp -a "$ak" "$bak" || return 1
+
+    # remove the problematic block
+    sed -i '/if \[\[ -w \/var \]\] ; then/,/fi/d' "$ak" || return 1
+}
+
+restore_akmodsbuild() {
+    local ak="/usr/sbin/akmodsbuild"
+    local bak="${ak}.backup"
+
+    if [[ -f "$bak" ]]; then
+        mv -f "$bak" "$ak"
+    fi
+}
 
 if [[ "${NVIDIA}" == "true" ]]; then
     log "Enabling Nvidia repositories."
     curl -fsSL -o /etc/yum.repos.d/nvidia-container-toolkit.repo https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo
     curl -fsSL -o /etc/yum.repos.d/fedora-nvidia.repo https://negativo17.org/repos/fedora-nvidia.repo
 
+    log "Temporarily disabling akmodsbuild script."
+    disable_akmodsbuild || exit 1
+
     log "Building and installing Nvidia kernel module packages."
-    cp /usr/sbin/akmodsbuild /usr/sbin/akmodsbuild.backup
-    sed -i '/if \[\[ -w \/var \]\] ; then/,/fi/d' /usr/sbin/akmodsbuild
-    dnf install -y --setopt=install_weak_deps=False --setopt=tsflags=noscripts akmod-nvidia nvidia-kmod-common nvidia-modprobe
-    akmods --force --verbose --kernels "$(rpm -q "${KERNEL_RPM_QUERY}" --queryformat '%{VERSION}-%{RELEASE}.%{ARCH}')" --kmod "nvidia"
-    mv /usr/sbin/akmodsbuild.backup /usr/sbin/akmodsbuild
+    dnf install -y --setopt=install_weak_deps=False --setopt=tsflags=noscripts \
+        akmod-nvidia \
+        nvidia-kmod-common \
+        nvidia-modprobe
+    akmods --force --verbose --kernels "${KERNEL_VERSION}" --kmod "nvidia"
+
+    log "Restoring akmodsbuild script."
+    restore_akmodsbuild
 
     log "Installing Nvidia userspace packages."
     dnf install -y --setopt=skip_unavailable=1 \
@@ -203,18 +231,18 @@ if [[ "${NVIDIA}" == "true" ]]; then
         libnvidia-ml.i686 \
         libnvidia-gpucomp.i686 \
         nvidia-container-toolkit
+
+    log "Cleaning Nvidia repositories."
     rm -f /etc/yum.repos.d/fedora-nvidia.repo
     rm -f /etc/yum.repos.d/nvidia-container-toolkit.repo
 
-    log "Installing various Nvidia configs"
-
-    # SELinux policy
+    log "Installing Nvidia SELinux policy."
     curl -fsSL -o nvidia-container.pp https://raw.githubusercontent.com/NVIDIA/dgx-selinux/master/bin/RHEL9/nvidia-container.pp
     semodule -i nvidia-container.pp
     rm -f nvidia-container.pp
 
-    # Container toolkit
-    install -D /dev/stdin /usr/lib/systemd/system/nvctk-cdi.service <<'EOF'
+    log "Installing Nvidia container toolkit service and preset."
+    install -D -m 0644 /dev/stdin /usr/lib/systemd/system/nvctk-cdi.service <<'EOF'
 [Unit]
 Description=NVIDIA Container Toolkit CDI auto-generation
 ConditionFileIsExecutable=/usr/bin/nvidia-ctk
@@ -229,24 +257,24 @@ ExecStart=/usr/bin/nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
 WantedBy=multi-user.target
 EOF
 
-    install -D /dev/stdin /usr/lib/systemd/system-preset/70-nvctk-cdi.preset <<'EOF'
+    install -D -m 0644 /dev/stdin /usr/lib/systemd/system-preset/70-nvctk-cdi.preset <<'EOF'
 enable nvctk-cdi.service
 EOF
 
-    # Kernel modules
-    install -D /dev/stdin /etc/modprobe.d/nvidia.conf <<'EOF'
+    log "Setting up Nvidia modules."
+    install -D -m 0644 /dev/stdin /etc/modprobe.d/nvidia.conf <<'EOF'
 blacklist nouveau
 options nouveau modeset=0
 options nvidia-drm modeset=1 fbdev=1
 EOF
 
-    # Initramfs
-    install -D /dev/stdin /usr/lib/dracut/dracut.conf.d/99-nvidia.conf <<'EOF'
+    log "Setting up GPU modules for initramfs."
+    install -D -m 0644 /dev/stdin /usr/lib/dracut/dracut.conf.d/99-nvidia.conf <<'EOF'
 # Force the i915 amdgpu nvidia drivers to the ramdisk
 force_drivers+=" i915 amdgpu nvidia nvidia_drm nvidia_modeset nvidia_peermem nvidia_uvm "
 EOF
 
-    # Bootloader
+    log "Setting up Nvidia kernel arguments."
     if command -v rpm-ostree >/dev/null 2>&1 && [[ -f /run/ostree-booted ]]; then
         rpm-ostree kargs \
             --append=rd.driver.blacklist=nouveau \
@@ -256,12 +284,7 @@ EOF
     fi
 fi
 
-# 8. Restore kernel install scripts and cleanup extras
-log "Restoring kernel install scripts."
-restore_kernel_install_hooks
-HOOKS_DISABLED=false
-
-# 9. Sign the kernel and modules
+# 6. Sign the kernel and modules
 sign_kernel_modules() {
     local KEY="$1"
 
@@ -278,18 +301,9 @@ sign_kernel_modules() {
         -key "$KEY" \
         -out "$CERT" \
         -days 36500 \
-        -subj "/CN=Module Signing/" || return 1
+        -subj "/CN=$(printf '%s' "$MOK_ISSUER")/" || return 1
 
-    # Detect kernel
-    local KVER
-    KVER="$(rpm -q --queryformat="%{evr}.%{arch}" "${KERNEL_RPM_QUERY}")" || return 1
-    if [ -z "$KVER" ]; then
-        error "kernel-cachyos-lto not found in RPM DB"
-        return 1
-    fi
-    log "Detected kernel version: $KVER"
-
-    local MODULE_ROOT="/usr/lib/modules/$KVER"
+    local MODULE_ROOT="/usr/lib/modules/$KERNEL_VERSION"
     local VMLINUZ="$MODULE_ROOT/vmlinuz"
     local SIGN_FILE="$MODULE_ROOT/build/scripts/sign-file"
 
@@ -302,10 +316,8 @@ sign_kernel_modules() {
         return 1
     fi
 
-    log "Recursively signing modules..."
-    find "$MODULE_ROOT" -type f \( \
-        -name "*.ko" -o -name "*.ko.xz" -o -name "*.ko.zst" -o -name "*.ko.gz" \
-        \) -print0 | while IFS= read -r -d '' mod; do
+    log "Recursively signing modules."
+    while IFS= read -r -d '' mod; do
         case "$mod" in
         *.ko)
             "$SIGN_FILE" sha256 "$KEY" "$CERT" "$mod" || return 1
@@ -329,9 +341,10 @@ sign_kernel_modules() {
             gzip "$raw"
             ;;
         esac
-    done
+    done < <(find "$MODULE_ROOT" -type f \( -name "*.ko" -o -name "*.ko.xz" -o -name "*.ko.zst" -o -name "*.ko.gz" \) -print0)
 
-    log "Done signing kernel + modules for $KVER"
+    rm -f "$CERT"
+    log "Done signing kernel + modules for $KERNEL_VERSION"
 }
 
 create_mok_enroll_unit() {
@@ -347,20 +360,21 @@ create_mok_enroll_unit() {
     fi
 
     # Create the DER file for MOK enrollment
-    tmp="$(mktemp)"
+    local CERT
+    CERT="$(mktemp)"
 
     openssl req \
         -new -x509 \
         -key "$KEY" \
         -outform DER \
-        -out "$tmp" \
+        -out "$CERT" \
         -days 36500 \
-        -subj "/CN=MOK/"
+        -subj "/CN=$(printf '%s' "$MOK_ISSUER")/" || return 1
 
-    install -D -m 0644 "$tmp" "$DER_PATH/MOK.der"
-    rm -f "$tmp"
+    install -D -m 0644 "$CERT" "$DER_PATH/MOK.der"
+    rm -f "$CERT"
 
-    install -D /dev/stdin "$UNIT_FILE" <<EOF
+    install -D -m 0644 /dev/stdin "$UNIT_FILE" <<EOF
 [Unit]
 Description=Enroll MOK key on first boot
 ConditionPathExists=$DER_PATH/MOK.der
@@ -385,7 +399,8 @@ if [[ -f "$SIGNING_KEY" && -n "$MOK_PASSWORD" ]]; then
     create_mok_enroll_unit "$SIGNING_KEY" "$MOK_PASSWORD" || exit 1
 fi
 
-# 10. Cleanup and System Configuration
-rm -f /etc/yum.repos.d/*copr* || true
+# 7. Initramfs
+DRACUT_NO_XATTR=1 /usr/bin/dracut --no-hostonly --kver "${KERNEL_VERSION}" --reproducible -v --add ostree -f "/lib/modules/${KERNEL_VERSION}/initramfs.img"
+chmod 0600 "/lib/modules/${KERNEL_VERSION}/initramfs.img"
 
 log "Custom kernel installation complete."

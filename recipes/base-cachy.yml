@@ -24,6 +24,7 @@ modules:
     sign:
       key: /tmp/certs/MOK.key
       mok-password: origami
+      mok-issuer: Origami Linux
 
   - from-file: core.yml
 
