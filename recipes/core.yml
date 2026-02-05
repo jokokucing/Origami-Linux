@@ -19,7 +19,6 @@ modules:
         - atim/starship
         - sneexy/zen-browser
         - lilay/origami-linux
-        - lilay/gigawatt
         - lilay/tealdeer
         - dejan/lazygit
       files:
@@ -30,7 +29,6 @@ modules:
         - terra-release
         - origami-update-applet
         - oru
-        - gigawatt
         - fish
         - lazygit
         - helix

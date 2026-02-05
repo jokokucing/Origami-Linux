@@ -94,7 +94,7 @@ ll() { command eza -l --icons "$@"; }
 
 # --- Interactive tooling -----------------------------------------------------
 _eval_if_available fzf --bash
-_eval_if_available gigawatt init bash
+_eval_if_available starship init bash
 _eval_if_available zoxide init bash --cmd cd
 
 # --- uutils-coreutils shims --------------------------------------------------
