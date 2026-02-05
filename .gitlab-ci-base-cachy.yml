@@ -3,7 +3,7 @@ include:
 stages:
   - build
   - iso
-build-base-image-cachy:
+build-base-cachy-image:
   extends: .bluebuild-job-template
   stage: build
   script:
