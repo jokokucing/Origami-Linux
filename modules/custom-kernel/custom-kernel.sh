@@ -403,8 +403,22 @@ fi
 rm -f /etc/yum.repos.d/*copr* || true
 
 if command -v setsebool >/dev/null 2>&1; then
-    log "Updating SELinux policies for kernel modules."
-    setsebool -P domain_kernel_load_modules on
+    if command -v selinuxenabled >/dev/null 2>&1 && selinuxenabled; then
+        if [[ -f /etc/selinux/config ]]; then
+            SELINUXTYPE=$(awk -F= '/^SELINUXTYPE=/{print $2}' /etc/selinux/config | tr -d ' ')
+        fi
+
+        if [[ -n "${SELINUXTYPE:-}" && -d "/etc/selinux/${SELINUXTYPE}" ]]; then
+            log "Updating SELinux policies for kernel modules."
+            if ! setsebool -P domain_kernel_load_modules on; then
+                log "Skipping SELinux boolean update (policy store not writable in build env)."
+            fi
+        else
+            log "SELinux policy store missing; skipping boolean update."
+        fi
+    else
+        log "SELinux not enabled; skipping boolean update."
+    fi
 fi
 
 log "Custom kernel installation complete."
