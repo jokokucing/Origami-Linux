@@ -293,15 +293,25 @@ sign_kernel_modules() {
         return 1
     fi
 
-    # Create the public key from private key
+    # FIX: Create a proper config to add Code Signing extensions
+    cat <<EOF >x509.conf
+[ req ]
+default_bits = 4096
+distinguished_name = req_distinguished_name
+prompt = no
+x509_extensions = v3_ca
+[ req_distinguished_name ]
+CN = $(printf '%s' "$MOK_ISSUER")
+[ v3_ca ]
+basicConstraints = critical,CA:FALSE
+keyUsage = digitalSignature
+extendedKeyUsage = codeSigning
+EOF
+
+    # Create the public key cert with the correct extensions
     local CERT
     CERT="$(mktemp)"
-
-    openssl req -new -x509 \
-        -key "$KEY" \
-        -out "$CERT" \
-        -days 36500 \
-        -subj "/CN=$(printf '%s' "$MOK_ISSUER")/" || return 1
+    openssl req -new -x509 -sha256 -days 36500 -config x509.conf -key "$KEY" -out "$CERT" || return 1
 
     local MODULE_ROOT="/usr/lib/modules/$KERNEL_VERSION"
     local VMLINUZ="$MODULE_ROOT/vmlinuz"
@@ -309,8 +319,11 @@ sign_kernel_modules() {
 
     # Sign kernel image
     if [ -f "$VMLINUZ" ]; then
-        log "Signing kernel image: $VMLINUZ"
-        sbsign --key "$KEY" --cert "$CERT" --output "$VMLINUZ" "$VMLINUZ"
+        log "Fixing alignment and signing kernel: $VMLINUZ"
+        # FIX: Align the binary to 4K to resolve "gaps between PE/COFF sections"
+        objcopy --set-section-alignment *=4096 "$VMLINUZ" "$VMLINUZ.aligned"
+        sbsign --key "$KEY" --cert "$CERT" --output "$VMLINUZ" "$VMLINUZ.aligned"
+        rm "$VMLINUZ.aligned"
     else
         error "Can't find kernel image: $VMLINUZ"
         return 1
@@ -343,7 +356,7 @@ sign_kernel_modules() {
         esac
     done < <(find "$MODULE_ROOT" -type f \( -name "*.ko" -o -name "*.ko.xz" -o -name "*.ko.zst" -o -name "*.ko.gz" \) -print0)
 
-    rm -f "$CERT"
+    rm -f "$CERT" "x509.conf"
     log "Done signing kernel + modules for $KERNEL_VERSION"
 }
 
@@ -363,8 +376,9 @@ create_mok_enroll_unit() {
     local CERT
     CERT="$(mktemp)"
 
+    # FIX: Use the same extensions for the DER file to ensure BIOS trust
     openssl req \
-        -new -x509 \
+        -new -x509 -sha256 \
         -key "$KEY" \
         -outform DER \
         -out "$CERT" \
