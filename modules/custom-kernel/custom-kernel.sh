@@ -21,11 +21,17 @@ if [[ -f /etc/os-release ]]; then
 fi
 
 # 2. Read configuration from the first argument ($1) using jq
-KERNEL_TYPE=$(echo "$1" | jq -r 'try .["kernel"] // "cachyos-lto"')
-NVIDIA=$(echo "$1" | jq -r 'try .["nvidia"] // "false"')
-SIGNING_KEY=$(echo "$1" | jq -r 'try .sign["key"] // ""')
-MOK_PASSWORD=$(echo "$1" | jq -r 'try .sign["mok-password"] // ""')
-MOK_ISSUER=$(echo "$1" | jq -r '(.sign["mok-issuer"] // "MOK") | select(length>0) // "MOK"')
+KERNEL_TYPE=$(echo "$1" | jq -r '.kernel // "cachyos-lto"')
+
+INITRAMFS=$(echo "$1" | jq -r '.initramfs // false')
+
+NVIDIA=$(echo "$1" | jq -r '.nvidia // false')
+
+SIGNING_KEY=$(echo "$1" | jq -r '.sign.key // ""')
+
+MOK_PASSWORD=$(echo "$1" | jq -r '.sign["mok-password"] // ""')
+
+MOK_ISSUER=$(echo "$1" | jq -r '(.sign["mok-issuer"] // "" | select(length>0)) // "MOK"')
 
 # Checking key, cert and password. Can't continue without them
 if [[ -z "$SIGNING_KEY" && -z "$MOK_PASSWORD" ]]; then
@@ -196,7 +202,7 @@ restore_akmodsbuild() {
     fi
 }
 
-if [[ "${NVIDIA}" == "true" ]]; then
+if [[ ${NVIDIA} == true ]]; then
     log "Enabling Nvidia repositories."
     curl -fsSL -o /etc/yum.repos.d/nvidia-container-toolkit.repo https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo
     curl -fsSL -o /etc/yum.repos.d/fedora-nvidia.repo https://negativo17.org/repos/fedora-nvidia.repo
@@ -274,14 +280,16 @@ EOF
 force_drivers+=" i915 amdgpu nvidia nvidia_drm nvidia_modeset nvidia_peermem nvidia_uvm "
 EOF
 
-    log "Setting up Nvidia kernel arguments."
-    if command -v rpm-ostree >/dev/null 2>&1 && [[ -f /run/ostree-booted ]]; then
-        rpm-ostree kargs \
-            --append=rd.driver.blacklist=nouveau \
-            --append=modprobe.blacklist=nouveau \
-            --append=nvidia-drm.modeset=1 \
-            --append=nvidia-drm.fbdev=1
-    fi
+    log "Injecting Nvidia kernel args"
+    install -D -m 0644 /dev/stdin /usr/lib/bootc/kargs.d/90-nvidia.toml <<'EOF'
+kargs = [
+"rd.driver.blacklist=nouveau",
+"modprobe.blacklist=nouveau",
+"rd.driver.pre=nvidia",
+"nvidia-drm.modeset=1",
+"nvidia-drm.fbdev=1"
+]
+EOF
 fi
 
 # 6. Sign the kernel and modules
@@ -293,25 +301,15 @@ sign_kernel_modules() {
         return 1
     fi
 
-    # FIX: Create a proper config to add Code Signing extensions
-    cat <<EOF >x509.conf
-[ req ]
-default_bits = 4096
-distinguished_name = req_distinguished_name
-prompt = no
-x509_extensions = v3_ca
-[ req_distinguished_name ]
-CN = $(printf '%s' "$MOK_ISSUER")
-[ v3_ca ]
-basicConstraints = critical,CA:FALSE
-keyUsage = digitalSignature
-extendedKeyUsage = codeSigning
-EOF
-
-    # Create the public key cert with the correct extensions
+    # Create the public key from private key
     local CERT
     CERT="$(mktemp)"
-    openssl req -new -x509 -sha256 -days 36500 -config x509.conf -key "$KEY" -out "$CERT" || return 1
+
+    openssl req -new -x509 \
+        -key "$KEY" \
+        -out "$CERT" \
+        -days 36500 \
+        -subj "/CN=$(printf '%s' "$MOK_ISSUER")/" || return 1
 
     local MODULE_ROOT="/usr/lib/modules/$KERNEL_VERSION"
     local VMLINUZ="$MODULE_ROOT/vmlinuz"
@@ -319,11 +317,8 @@ EOF
 
     # Sign kernel image
     if [ -f "$VMLINUZ" ]; then
-        log "Fixing alignment and signing kernel: $VMLINUZ"
-        # FIX: Align the binary to 4K to resolve "gaps between PE/COFF sections"
-        objcopy --set-section-alignment *=4096 "$VMLINUZ" "$VMLINUZ.aligned"
-        sbsign --key "$KEY" --cert "$CERT" --output "$VMLINUZ" "$VMLINUZ.aligned"
-        rm "$VMLINUZ.aligned"
+        log "Signing kernel image: $VMLINUZ"
+        sbsign --key "$KEY" --cert "$CERT" --output "$VMLINUZ" "$VMLINUZ"
     else
         error "Can't find kernel image: $VMLINUZ"
         return 1
@@ -356,7 +351,7 @@ EOF
         esac
     done < <(find "$MODULE_ROOT" -type f \( -name "*.ko" -o -name "*.ko.xz" -o -name "*.ko.zst" -o -name "*.ko.gz" \) -print0)
 
-    rm -f "$CERT" "x509.conf"
+    rm -f "$CERT"
     log "Done signing kernel + modules for $KERNEL_VERSION"
 }
 
@@ -376,9 +371,8 @@ create_mok_enroll_unit() {
     local CERT
     CERT="$(mktemp)"
 
-    # FIX: Use the same extensions for the DER file to ensure BIOS trust
     openssl req \
-        -new -x509 -sha256 \
+        -new -x509 \
         -key "$KEY" \
         -outform DER \
         -out "$CERT" \
@@ -414,7 +408,19 @@ if [[ -f "$SIGNING_KEY" && -n "$MOK_PASSWORD" ]]; then
 fi
 
 # 7. Initramfs
-DRACUT_NO_XATTR=1 /usr/bin/dracut --no-hostonly --kver "${KERNEL_VERSION}" --reproducible -v --add ostree -f "/lib/modules/${KERNEL_VERSION}/initramfs.img"
-chmod 0600 "/lib/modules/${KERNEL_VERSION}/initramfs.img"
+if [[ ${INITRAMFS} == true ]]; then
+    log "Generating initramfs."
+    tmp_initramfs="$(mktemp)"
+    DRACUT_NO_XATTR=1 /usr/bin/dracut \
+        --no-hostonly \
+        --kver "${KERNEL_VERSION}" \
+        --reproducible \
+        --add ostree \
+        -f "$tmp_initramfs" \
+        -v || return 1
+
+    install -D -m 0600 "$tmp_initramfs" "/lib/modules/${KERNEL_VERSION}/initramfs.img"
+    rm -f "$tmp_initramfs"
+fi
 
 log "Custom kernel installation complete."
