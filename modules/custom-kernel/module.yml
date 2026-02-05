@@ -21,14 +21,15 @@ example: |
   type: custom-kernel
   kernel: cachyos-lts
 
-  # Install Nvidia drivers on top of the custom kernel and sign ev erything
+  # Install Nvidia drivers on top of the custom kernel, sign and re-build initramfs
   type: custom-kernel
-  kernel: cachyos-lto
-  nvidia: true
-  sign:
+  kernel: cachyos-lto   # Default: cachyos-lto
+  initramfs: true       # Default: false
+  nvidia: true          # Default: false
+  sign:                 # Optional
     key: /path/to/key
-    mok-password: scachy
-    mok-issuer: scachy
+    mok-password: BlueBuild
+    mok-issuer: BlueBuild
   secrets:
   - type: file
     source: ./MOK.priv
