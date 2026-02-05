@@ -23,3 +23,8 @@ build-base-iso:
     - export AWS_ACCESS_KEY_ID=$S3_ACCESS_KEY
     - export AWS_SECRET_ACCESS_KEY=$S3_SECRET_KEY
     - aws s3 cp $ISO_NAME s3://origami-linux/$ISO_NAME --endpoint-url $S3_ENDPOINT_URL
+    - |
+      curl -X POST "https://api.cdn77.com/v3/cdn/$CDN_ID/job/purge/paths" \
+        -H "Authorization: Bearer $CDN77_API_KEY" \
+        -H "Content-Type: application/json" \
+        -d "{\"paths\": [\"/$ISO_NAME\"]}"
