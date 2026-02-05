@@ -17,8 +17,14 @@ modules:
     kernel: cachyos-lto
     nvidia: true
     adios-scheduler: true
+    secrets:
+      - type: file
+        source: .secure_files/MOK.key
+        mount:
+          type: file
+          destination: /tmp/certs/MOK.key
     sign:
-      key: /tmp/files/certs/MOK.key
+      key: /tmp/certs/MOK.key
       mok-password: origami
 
   - from-file: core.yml
