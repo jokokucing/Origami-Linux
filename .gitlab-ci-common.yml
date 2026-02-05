@@ -6,9 +6,9 @@
   - export COSIGN_PRIVATE_KEY=$(cat .secure_files/cosign.key)
   - echo "Logging in to $CI_REGISTRY..."
   - echo $CI_REGISTRY_PASSWORD | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
-  - mkdir -p certs
-  - cp .secure_files/MOK.key certs/MOK.key
-  - chmod 600 certs/MOK.key
+  - mkdir -p files/certs
+  - cp .secure_files/MOK.key files/certs/MOK.key
+  - chmod 600 files/certs/MOK.key
 .bluebuild-job-template:
   interruptible: true
   tags:
