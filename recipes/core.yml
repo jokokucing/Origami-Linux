@@ -77,7 +77,6 @@ modules:
         - cosmic-player
         - firefox
         - firefox-langpacks
-        - gnome-disk-utility
         - gnome-system-monitor
         - ark
         - htop
