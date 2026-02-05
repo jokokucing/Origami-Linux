@@ -3,12 +3,12 @@ include:
 stages:
   - build
   - iso
-build-nvidia-image:
+build-nvidia-cachy-image:
   extends: .bluebuild-job-template
   stage: build
   script:
     - bluebuild build --verbose --build-chunked-oci --compression-format zstd --push ./recipes/nvidia-cachy.yml
-build-nvidia-iso:
+build-nvidia-cachy-iso:
   extends: .bluebuild-job-template
   stage: iso
   before_script:
