@@ -46,6 +46,10 @@ modules:
         - scx-scheds
         - scx-tools
 
+  - type: script
+    scripts:
+      - adios-ioscheduler.sh
+
   - from-file: core.yml
 
   - type: os-release
