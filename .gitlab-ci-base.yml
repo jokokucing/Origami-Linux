@@ -9,7 +9,7 @@ build-base-image:
   variables:
     IMAGE_NAME: "registry.gitlab.com/origami-linux/images/origami"
   script:
-    - bluebuild build --verbose --build-chunked-oci --compression-format zstd --push ./recipes/base.yml
+    - bluebuild build --verbose --compression-format zstd --push ./recipes/base.yml
     - curl -sSL -o /usr/local/bin/crane https://github.com/google/go-containerregistry/releases/download/v0.20.2/crane-linux-amd64
     - chmod +x /usr/local/bin/crane
     - crane tag "$IMAGE_NAME:latest" cachy
