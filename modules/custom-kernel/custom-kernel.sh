@@ -120,6 +120,16 @@ cachyos-lts)
         kernel-cachyos-lts-devel-matched
     )
     ;;
+fedora)
+    KERNEL_PACKAGES=(
+        kernel
+        kernel-core
+        kernel-modules
+        kernel-modules-core
+        kernel-modules-extra
+        kernel-devel-matched
+    )
+    ;;
 *)
     error "Unsupported kernel type: ${KERNEL_TYPE}"
     exit 1
