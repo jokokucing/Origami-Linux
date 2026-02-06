@@ -7,6 +7,9 @@ modules:
         - flatpak-add-fedora-repos.service
         - bootc-fetch-apply-updates.timer
       enabled:
+        - flatpak-firstboot.service
+    user:
+      enabled:
         - podman.socket
 
   - type: dnf
@@ -14,7 +17,6 @@ modules:
       cleanup: true
       copr:
         - atim/starship
-        - sneexy/zen-browser
         - lilay/origami-linux
         - lilay/tealdeer
         - dejan/lazygit
@@ -35,7 +37,6 @@ modules:
         - python3-neovim
         - zellij
         - topgrade
-        - zen-browser
         - rsms-inter-fonts
         - google-noto-sans-myanmar-fonts
         - google-noto-serif-myanmar-fonts
