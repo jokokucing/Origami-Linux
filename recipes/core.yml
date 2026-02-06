@@ -14,6 +14,7 @@ modules:
     repos:
       cleanup: true
       copr:
+        - bieszczaders/kernel-cachyos-addons
         - atim/starship
         - sneexy/zen-browser
         - lilay/origami-linux
@@ -65,12 +66,16 @@ modules:
         - micro
         - system-config-printer
         - steam-devices
+        - cachyos-settings
+        - scx-scheds
+        - scx-tools
         - repo: copr:copr.fedorainfracloud.org:lilay:tealdeer
           packages:
             - tealdeer
     remove:
       auto-remove: true
       packages:
+        - zram-generator-defaults
         - cosmic-player
         - firefox
         - firefox-langpacks
@@ -109,5 +114,6 @@ modules:
 
   - type: script
     scripts:
+      - adios-ioscheduler.sh
       - install-theme.sh
       - cleanup.sh

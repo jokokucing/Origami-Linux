@@ -8,9 +8,6 @@ image-version: latest
 platforms:
   - linux/amd64
 
-alt-tags:
-  - nvidia-cachy
-
 modules:
   - type: files
     files:
@@ -20,7 +17,6 @@ modules:
   - type: custom-kernel
     source: local
     kernel: cachyos-lto
-    nvidia: true
     secrets:
       - type: file
         source: .secure_files/MOK.priv
@@ -32,31 +28,7 @@ modules:
       cert: /usr/share/cert/MOK.pem
       mok-password: origami
 
-  - type: dnf
-    repos:
-      cleanup: true
-      copr:
-        - bieszczaders/kernel-cachyos-addons
-    remove:
-      packages:
-        - zram-generator-defaults
-    install:
-      skip-unavailable: true
-      packages:
-        - cachyos-settings
-        - scx-scheds
-        - scx-tools
-
-  - type: script
-    scripts:
-      - adios-ioscheduler.sh
-
   - from-file: core.yml
-
-  - type: dnf
-    install:
-      packages:
-        - nvtop
 
   - type: os-release
     properties:

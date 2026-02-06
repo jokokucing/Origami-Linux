@@ -1,9 +1,0 @@
-include:
-  - local: .gitlab-ci-common.yml
-stages:
-  - build
-build-test-cachy-image:
-  extends: .bluebuild-job-template
-  stage: build
-  script:
-    - bluebuild build --verbose --compression-format zstd --push ./recipes/test-cachy.yml
