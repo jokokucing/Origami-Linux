@@ -6,8 +6,6 @@ modules:
         - NetworkManager-wait-online.service
         - flatpak-add-fedora-repos.service
         - bootc-fetch-apply-updates.timer
-      enabled:
-        - flatpak-firstboot.service
     user:
       enabled:
         - podman.socket
@@ -37,6 +35,7 @@ modules:
         - python3-neovim
         - zellij
         - topgrade
+        - zen-browser
         - rsms-inter-fonts
         - google-noto-sans-myanmar-fonts
         - google-noto-serif-myanmar-fonts
