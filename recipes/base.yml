@@ -14,6 +14,39 @@ modules:
       - source: system
         destination: /
 
+  - type: custom-kernel
+    source: local
+    kernel: cachyos-lto
+    secrets:
+      - type: file
+        source: .secure_files/MOK.priv
+        mount:
+          type: file
+          destination: /tmp/certs/MOK.priv
+    sign:
+      key: /tmp/certs/MOK.priv
+      cert: /usr/share/cert/MOK.pem
+      mok-password: origami
+
+  - type: dnf
+    repos:
+      cleanup: true
+      copr:
+        - bieszczaders/kernel-cachyos-addons
+    remove:
+      packages:
+        - zram-generator-defaults
+    install:
+      skip-unavailable: true
+      packages:
+        - cachyos-settings
+        - scx-scheds
+        - scx-tools
+
+  - type: script
+    scripts:
+      - adios-ioscheduler.sh
+
   - from-file: core.yml
 
   - type: os-release

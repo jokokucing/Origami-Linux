@@ -3,12 +3,16 @@ include:
 stages:
   - build
   - iso
-build-base-image:
+build-base-cachy-image:
   extends: .bluebuild-job-template
   stage: build
+  variables:
+    IMAGE_NAME: "registry.gitlab.com/origami-linux/images/origami"
   script:
     - bluebuild build --verbose --build-chunked-oci --compression-format zstd --push ./recipes/base.yml
-build-base-iso:
+    - curl -sSL -o /usr/local/bin/crane https://github.com/google/go-containerregistry/releases/download/v0.20.2/crane-linux-amd64
+    - chmod +x /usr/local/bin/crane
+    - crane tag "$IMAGE_NAME:latest" cachybuild-base-cachy-iso:
   extends: .bluebuild-job-template
   stage: iso
   before_script:

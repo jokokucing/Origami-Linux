@@ -30,24 +30,6 @@ trigger-base-image-build:
         - "files/**/*"
         - "modules/**/*"
 
-# --- Trigger Base Cachy Pipeline ---
-trigger-base-cachy-image-build:
-  stage: triggers
-  trigger:
-    include: .gitlab-ci-base-cachy.yml
-    strategy: depend
-  rules:
-    - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
-      when: never
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-    - changes:
-        - recipes/base-cachy.yml
-        - recipes/core.yml
-        - .gitlab-ci-base-cachy.yml
-        - .gitlab-ci.yml
-        - "files/**/*"
-        - "modules/**/*"
-
 # --- Trigger Nvidia Pipeline ---
 trigger-nvidia-image-build:
   stage: triggers
@@ -66,74 +48,20 @@ trigger-nvidia-image-build:
         - "files/**/*"
         - "modules/**/*"
 
-# --- Trigger Nvidia Cachy Pipeline ---
-trigger-nvidia-cachy-image-build:
-  stage: triggers
-  trigger:
-    include: .gitlab-ci-nvidia-cachy.yml
-    strategy: depend
-  rules:
-    - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
-      when: never
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-    - changes:
-        - recipes/nvidia-cachy.yml
-        - recipes/core.yml
-        - .gitlab-ci-nvidia-cachy.yml
-        - .gitlab-ci.yml
-        - "files/**/*"
-        - "modules/**/*"
-
 # --- Trigger Test Pipeline ---
-trigger-test-image-build:
+trigger-test-base-image-build:
   stage: triggers
   trigger:
-    include: .gitlab-ci-test.yml
+    include: .gitlab-ci-test-base.yml
     strategy: depend
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
       when: never
     - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
       changes:
-        - recipes/test.yml
+        - recipes/test-base.yml
         - recipes/core.yml
-        - .gitlab-ci-test.yml
-        - .gitlab-ci.yml
-        - "files/**/*"
-        - "modules/**/*"
-
-# --- Trigger Test Cachy Pipeline ---
-trigger-test-cachy-image-build:
-  stage: triggers
-  trigger:
-    include: .gitlab-ci-test-cachy.yml
-    strategy: depend
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-      when: never
-    - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
-      changes:
-        - recipes/test-cachy.yml
-        - recipes/core.yml
-        - .gitlab-ci-test-cachy.yml
-        - .gitlab-ci.yml
-        - "files/**/*"
-        - "modules/**/*"
-
-# --- Trigger Test Nvidia Cachy Pipeline ---
-trigger-test-nvidia-cachy-image-build:
-  stage: triggers
-  trigger:
-    include: .gitlab-ci-test-nvidia-cachy.yml
-    strategy: depend
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-      when: never
-    - if: "$CI_COMMIT_REF_NAME == $TEST_PIPELINE_BRANCH"
-      changes:
-        - recipes/test-nvidia-cachy.yml
-        - recipes/core.yml
-        - .gitlab-ci-test-nvidia-cachy.yml
+        - .gitlab-ci-test-base.yml
         - .gitlab-ci.yml
         - "files/**/*"
         - "modules/**/*"
