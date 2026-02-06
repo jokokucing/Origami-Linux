@@ -2,7 +2,7 @@ include:
   - local: .gitlab-ci-common.yml
 stages:
   - build
-build-test-nvidia-cachy-image:
+build-test-nvidia-image:
   extends: .bluebuild-job-template
   stage: build
   script:

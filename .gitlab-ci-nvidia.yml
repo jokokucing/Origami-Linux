@@ -3,7 +3,7 @@ include:
 stages:
   - build
   - iso
-build-nvidia-cachy-image:
+build-nvidia-image:
   extends: .bluebuild-job-template
   stage: build
   variables:
@@ -13,7 +13,7 @@ build-nvidia-cachy-image:
     - curl -sSL -o /usr/local/bin/crane https://github.com/google/go-containerregistry/releases/download/v0.20.2/crane-linux-amd64
     - chmod +x /usr/local/bin/crane
     - crane tag "$IMAGE_NAME:latest" cachy
-build-nvidia-cachy-iso:
+build-nvidia-iso:
   extends: .bluebuild-job-template
   stage: iso
   before_script:

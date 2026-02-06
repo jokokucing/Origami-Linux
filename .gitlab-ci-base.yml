@@ -3,7 +3,7 @@ include:
 stages:
   - build
   - iso
-build-base-cachy-image:
+build-base-image:
   extends: .bluebuild-job-template
   stage: build
   variables:
@@ -12,7 +12,8 @@ build-base-cachy-image:
     - bluebuild build --verbose --build-chunked-oci --compression-format zstd --push ./recipes/base.yml
     - curl -sSL -o /usr/local/bin/crane https://github.com/google/go-containerregistry/releases/download/v0.20.2/crane-linux-amd64
     - chmod +x /usr/local/bin/crane
-    - crane tag "$IMAGE_NAME:latest" cachybuild-base-cachy-iso:
+    - crane tag "$IMAGE_NAME:latest" cachy
+build-base-iso:
   extends: .bluebuild-job-template
   stage: iso
   before_script:
