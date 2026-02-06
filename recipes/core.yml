@@ -15,6 +15,7 @@ modules:
       cleanup: true
       copr:
         - atim/starship
+        - sneexy/zen-browser
         - lilay/origami-linux
         - lilay/tealdeer
         - dejan/lazygit
