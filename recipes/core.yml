@@ -96,7 +96,7 @@ modules:
         - name: NotoColorEmoji
           url: https://github.com/googlefonts/noto-emoji/raw/main/fonts/NotoColorEmoji.ttf
         - name: Maple-Mono-NF
-          url: https://github.com/subframe7536/maple-font/releases/download/v7.9/MapleMono-NF-unhinted.zip
+          url: https://github.com/subframe7536/maple-font/releases/latest/download/MapleMono-NF-unhinted.zip
 
   - type: default-flatpaks
     configurations:
