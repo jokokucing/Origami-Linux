@@ -20,7 +20,7 @@ build-nvidia-iso:
     IMAGE_NAME: "registry.gitlab.com/origami-linux/images/origami-nvidia"
   script:
     # Build ISO
-    - bluebuild generate-iso --enrollment-password origami --iso-name $ISO_NAME image $IMAGE_NAME
+    - bluebuild generate-iso --secure-boot-url https://gitlab.com/origami-linux/images/-/raw/main/MOK.der --enrollment-password origami --iso-name $ISO_NAME image $IMAGE_NAME
 
     # Generate SHA256
     - sha256sum $ISO_NAME | tee $ISO_NAME.sha256

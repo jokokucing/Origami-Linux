@@ -32,6 +32,25 @@ modules:
       cert: /usr/share/cert/MOK.pem
       mok-password: origami
 
+  - type: dnf
+    repos:
+      cleanup: true
+      copr:
+        - bieszczaders/kernel-cachyos-addons
+    remove:
+      packages:
+        - zram-generator-defaults
+    install:
+      skip-unavailable: true
+      packages:
+        - cachyos-settings
+        - scx-scheds
+        - scx-tools
+
+  - type: script
+    scripts:
+      - adios-ioscheduler.sh
+
   - from-file: core.yml
 
   - type: dnf
