@@ -6,6 +6,8 @@ modules:
         - NetworkManager-wait-online.service
         - flatpak-add-fedora-repos.service
         - bootc-fetch-apply-updates.timer
+      enabled:
+        - podman.socket
 
   - type: dnf
     repos:
