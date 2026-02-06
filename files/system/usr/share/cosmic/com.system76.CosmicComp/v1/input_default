@@ -1,0 +1,9 @@
+(
+    state: Enabled,
+    scroll_config: Some((
+        method: None,
+        natural_scroll: Some(true),
+        scroll_button: None,
+        scroll_factor: None,
+    )),
+)

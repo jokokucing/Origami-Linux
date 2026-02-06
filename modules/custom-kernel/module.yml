@@ -1,38 +1,17 @@
 name: custom-kernel
 shortdesc: Install a custom kernel on Fedora-based images.
 example: |
-  # Install the CachyOS LTO kernel (default)
   type: custom-kernel
-  kernel: cachyos-lto
-
-  # Use the CachyOS LTS LTO kernel
-  type: custom-kernel
-  kernel: cachyos-lts-lto
-
-  # Use the CachyOS (non-LTO) kernel
-  type: custom-kernel
-  kernel: cachyos
-
-  # Use the CachyOS RT (non-LTO) kernel
-  type: custom-kernel
-  kernel: cachyos-rt
-
-  # Use the CachyOS LTS (non-LTO) kernel
-  type: custom-kernel
-  kernel: cachyos-lts
-
-  # Install Nvidia drivers on top of the custom kernel, sign and re-build initramfs
-  type: custom-kernel
-  kernel: cachyos-lto   # Default: cachyos-lto
+  kernel: cachyos-lto   # Default: cachyos-lto, can be: cachyos, cachyos-lts, cachyos-rt, cachyos-lts-lto
   initramfs: true       # Default: false
   nvidia: true          # Default: false
   sign:                 # Optional
-    key: /tmp/certs/MOK.priv
-    cert: /path/to/cert # PEM format
+    key: /tmp/certs/MOK.key
+    cert: /path/to/MOK.pem
     mok-password: BlueBuild
   secrets:
   - type: file
-    source: ./MOK.priv
+    source: ./MOK.key
     mount:
       type: file
-      destination: /tmp/certs/MOK.priv
+      destination: /tmp/certs/MOK.key
