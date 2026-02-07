@@ -3,7 +3,7 @@ include:
 stages:
   - build
   - iso
-build-nvidia-cachy-image:
+build-nvidia-image:
   extends: .bluebuild-job-template
   stage: build
   variables:
