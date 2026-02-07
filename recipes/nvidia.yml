@@ -41,7 +41,7 @@ modules:
       ID: origami-nvidia
       ID_LIKE: fedora
       NAME: Origami Linux Nvidia
-      PRETTY_NAME: Origami 折り紙
+      PRETTY_NAME: Origami Linux
       HOME_URL: "https://origami.wf/"
       BUG_REPORT_URL: "https://gitlab.com/groups/origami-linux/-/issues"
       DEFAULT_HOSTNAME: origami
